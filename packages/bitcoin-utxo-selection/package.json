@@ -1,8 +1,8 @@
 {
-  "name": "@rosen-bridge/bitcoin-utxo-selection",
+  "name": "@rosen-selection/bitcoin",
   "version": "0.3.0",
-  "description": "Typescript package to select enough Bitcoin utxos for required amount of BTC",
-  "repository": "https://github.com/rosen-bridge/utils",
+  "description": "A Typescript package to select enough Bitcoin utxos for required amount of BTC",
+  "repository": "https://github.com/rosen-bridge/selection",
   "license": "GPL-3.0",
   "author": "Rosen Team",
   "type": "module",
@@ -13,7 +13,7 @@
     "coverage": "npm run test -- --run --coverage",
     "lint": "eslint --fix . && npm run prettify",
     "prettify": "prettier --write . --ignore-path ./.gitignore",
-    "release": "npm run build && npm publish --access public",
+    "release": "npm run build && npm run test -- --run && npm publish --access public",
     "test": "NODE_OPTIONS=--loader=extensionless vitest",
     "type-check": "tsc --noEmit"
   },
