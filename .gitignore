@@ -131,3 +131,7 @@ dist
 
 # Sqlite databases
 *.sqlite
+
+# Idea files
+.idea
+.DS_Store
