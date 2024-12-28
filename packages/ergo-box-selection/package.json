@@ -1,5 +1,5 @@
 {
-  "name": "@rosen-selection/ergo",
+  "name": "@rosen-bridge/ergo-box-selection",
   "version": "0.5.2",
   "description": "A Typescript package to select enough Ergo utxos for required amount of assets",
   "repository": "https://github.com/rosen-bridge/selection",

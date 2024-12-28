@@ -1,5 +1,5 @@
 {
-  "name": "@rosen-selection/bitcoin",
+  "name": "@rosen-bridge/bitcoin-utxo-selection",
   "version": "0.3.0",
   "description": "A Typescript package to select enough Bitcoin utxos for required amount of BTC",
   "repository": "https://github.com/rosen-bridge/selection",
