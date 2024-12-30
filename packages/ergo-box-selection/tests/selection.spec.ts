@@ -715,9 +715,6 @@ describe('createChangeBox', () => {
       0n
     );
 
-    const safeMinBoxValue = BigInt(
-      ergoLib.BoxValue.SAFE_USER_MIN().as_i64().to_str()
-    );
     expect(changeValue).toEqual(0n);
     expect(
       [
