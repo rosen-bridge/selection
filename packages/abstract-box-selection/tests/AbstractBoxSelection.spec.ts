@@ -661,7 +661,7 @@ describe('AbstractBoxSelection', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return first serialized box
+     * - it should return two serialized boxes
      * - additional assets should be correct
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for the change box', async () => {
@@ -730,7 +730,7 @@ describe('AbstractBoxSelection', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return first serialized box
+     * - it should return two serialized boxes
      * - additional assets should be correct
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for multiple change boxes', async () => {
