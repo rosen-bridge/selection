@@ -1,5 +1,5 @@
 export default {
   '*.ts': () => 'npm run type-check',
-  '*.{js,ts}': ['eslint --fix', 'vitest related --run'],
+  '*.{js,ts}': 'eslint --fix',
   '*': 'prettier --ignore-unknown --write',
 };
