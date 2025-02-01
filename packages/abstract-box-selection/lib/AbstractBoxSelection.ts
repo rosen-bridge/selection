@@ -2,8 +2,8 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { AssetBalance, BoxInfo, CoveringBoxes } from './types';
 
 export abstract class AbstractBoxSelection<BoxType> {
-  protected readonly DEFAULT_MIN_BOX_VALUE = 0n;
-  protected readonly DEFAULT_MAX_TOKEN_COUNT = 99999;
+  protected readonly DEFAULT_MIN_BOX_VALUE: bigint = 0n;
+  protected readonly DEFAULT_MAX_TOKEN_COUNT: number = 99999;
   readonly logger: AbstractLogger;
 
   constructor(logger?: AbstractLogger) {
