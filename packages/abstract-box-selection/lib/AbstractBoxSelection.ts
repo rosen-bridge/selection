@@ -2,7 +2,9 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { AssetBalance, BoxInfo, CoveringBoxes } from './types';
 
 export abstract class AbstractBoxSelection<BoxType> {
-  logger: AbstractLogger;
+  protected readonly DEFAULT_MIN_BOX_VALUE: bigint = 0n;
+  protected readonly DEFAULT_MAX_TOKEN_COUNT: number = 99999;
+  readonly logger: AbstractLogger;
 
   constructor(logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
@@ -33,8 +35,8 @@ export abstract class AbstractBoxSelection<BoxType> {
     boxIterator:
       | AsyncIterator<BoxType, undefined>
       | Iterator<BoxType, undefined>,
-    minBoxValue = 0n,
-    maxTokenCount = 99999,
+    minBoxValue = this.DEFAULT_MIN_BOX_VALUE,
+    maxTokenCount = this.DEFAULT_MAX_TOKEN_COUNT,
   ): Promise<CoveringBoxes<BoxType>> => {
     if (maxTokenCount === 0) throw new Error(`maxTokenCount cannot be zero!`);
     let uncoveredNativeToken = requiredAssets.nativeToken;
