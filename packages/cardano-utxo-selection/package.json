@@ -1,6 +1,6 @@
 {
   "name": "@rosen-bridge/cardano-utxo-selection",
-  "version": "1.1.2",
+  "version": "1.1.2-4e36261b",
   "description": "A Typescript package to select enough Cardano utxos for required amount of assets",
   "repository": "https://github.com/rosen-bridge/selection",
   "license": "GPL-3.0",
