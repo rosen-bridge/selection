@@ -21,3 +21,8 @@ export interface BoxInfo {
   id: string;
   assets: AssetBalance;
 }
+
+export type FeeEstimator<BoxType> = (
+  selectedBoxes: Array<BoxType>,
+  changeBoxesCount: number,
+) => bigint;
