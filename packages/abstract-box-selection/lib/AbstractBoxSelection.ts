@@ -4,6 +4,10 @@ import { AssetBalance, BoxInfo, CoveringBoxes } from './types';
 export abstract class AbstractBoxSelection<BoxType> {
   protected readonly DEFAULT_MIN_BOX_VALUE: bigint = 0n;
   protected readonly DEFAULT_MAX_TOKEN_COUNT: number = 99999;
+  protected readonly DEFAULT_FEE_ESTIMATOR: (
+    selectedBoxes: BoxType[],
+    changeBoxesCount: number,
+  ) => bigint = () => 0n;
   readonly logger: AbstractLogger;
 
   constructor(logger?: AbstractLogger) {
@@ -19,12 +23,15 @@ export abstract class AbstractBoxSelection<BoxType> {
 
   /**
    * gets useful, allowable and last boxes for an address until required assets are satisfied
+   * - Note: `maxTokenCount` cannot be zero
+   * - Note: the estimated fee is NOT reduced from `additionalAssets`
    * @param requiredAssets the required assets
    * @param forbiddenBoxIds the id of forbidden boxes
    * @param trackMap the mapping of a box id to it's next box
    * @param boxIterator the iterator to get boxes
    * @param minBoxValue the minimum amount of native token that should be in a box
    * @param maxTokenCount the maximum number of tokens that can be in a box
+   * @param estimateFee a function to estimate the fee of the transaction based on selected boxes and suggested output count
    * @returns an object containing the selected boxes, a boolean showing if requirements
    *  are covered or not and additionalAssets as aggregated and distributed into list based on `maxTokenCount`
    */
@@ -37,6 +44,7 @@ export abstract class AbstractBoxSelection<BoxType> {
       | Iterator<BoxType, undefined>,
     minBoxValue = this.DEFAULT_MIN_BOX_VALUE,
     maxTokenCount = this.DEFAULT_MAX_TOKEN_COUNT,
+    estimateFee = this.DEFAULT_FEE_ESTIMATOR,
   ): Promise<CoveringBoxes<BoxType>> => {
     if (maxTokenCount === 0) throw new Error(`maxTokenCount cannot be zero!`);
     let uncoveredNativeToken = requiredAssets.nativeToken;
@@ -50,11 +58,28 @@ export abstract class AbstractBoxSelection<BoxType> {
     const selectedBoxIds: Array<string> = [];
     const result: Array<BoxType> = [];
 
-    const isNativeTokenRequired = () =>
-      uncoveredNativeToken > 0n ||
-      additionalAssets.nativeToken <
+    /**
+     * checks if native token sufficient to cover the requirements
+     * - uncovered native token
+     * - required min box value for change boxes
+     * - fee of the transaction
+     * @returns true if native token is required to cover the remaining requirements
+     */
+    const isNativeTokenRequired = () => {
+      const requiredNative =
+        uncoveredNativeToken > 0n ? uncoveredNativeToken : 0n;
+      const additionalRequired =
         BigInt(Math.ceil(additionalAssets.tokens.length / maxTokenCount)) *
-          minBoxValue;
+        minBoxValue;
+      const fee = estimateFee(
+        result,
+        Math.ceil(additionalAssets.tokens.length / maxTokenCount),
+      );
+
+      return (
+        requiredNative + additionalRequired + fee > additionalAssets.nativeToken
+      );
+    };
     const isRequirementRemaining = () =>
       uncoveredTokens.length > 0 || isNativeTokenRequired();
 

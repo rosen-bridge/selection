@@ -8,6 +8,10 @@ import {
 export class ErgoBoxSelection extends AbstractBoxSelection<ErgoBox> {
   protected readonly DEFAULT_MIN_BOX_VALUE = 100000n;
   protected readonly DEFAULT_MAX_TOKEN_COUNT = 100;
+  protected readonly DEFAULT_FEE_ESTIMATOR: (
+    selectedBoxes: ErgoBox[],
+    changeBoxesCount: number,
+  ) => bigint = () => 1100000n;
 
   /**
    * extracts box id and assets of a box
