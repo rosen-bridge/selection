@@ -1,4 +1,4 @@
-import { BitcoinBoxSelection } from '../lib/BitcoinBoxSelection';
+import { BitcoinBoxSelection } from '../lib';
 import * as testData from './testData';
 
 describe('BitcoinBoxSelection', () => {

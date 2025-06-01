@@ -1,2 +1,2 @@
-export * from './BitcoinRunesBoxSelection';
+export * from './bitcoinRunesBoxSelection';
 export * from './types';

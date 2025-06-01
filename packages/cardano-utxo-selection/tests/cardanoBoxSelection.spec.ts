@@ -1,10 +1,10 @@
-import { BitcoinRunesBoxSelection } from '../lib/BitcoinRunesBoxSelection';
+import { CardanoBoxSelection } from '../lib';
 import * as testData from './testData';
 
-describe('BitcoinRunesBoxSelection', () => {
+describe('CardanoBoxSelection', () => {
   describe('getBoxInfo', () => {
     /**
-     * @target BitcoinRunesBoxSelection.getBoxInfo should return box info successfully
+     * @target CardanoBoxSelection.getBoxInfo should return box info successfully
      * @dependencies
      * @scenario
      * - run test
@@ -14,8 +14,8 @@ describe('BitcoinRunesBoxSelection', () => {
      */
     it('should return box info successfully', async () => {
       // Run test
-      const chain = new BitcoinRunesBoxSelection();
-      const result = chain.getBoxInfo(testData.bitcoinUtxos[0]);
+      const chain = new CardanoBoxSelection();
+      const result = chain.getBoxInfo(testData.cardanoUtxos[0]);
 
       // Check returned value
       expect(result).toEqual(testData.utxo0BoxInfo);
