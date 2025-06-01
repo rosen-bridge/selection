@@ -4,5 +4,5 @@
     "rootDir": "./lib"
   },
   "exclude": ["tests", "vitest.config.ts"],
-  "references": []
+  "references": [{ "path": "../abstract-box-selection/tsconfig.build.json" }]
 }

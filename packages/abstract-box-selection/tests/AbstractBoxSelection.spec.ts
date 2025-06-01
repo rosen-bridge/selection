@@ -875,8 +875,7 @@ describe('AbstractBoxSelection', () => {
         iterator,
         10000n,
         undefined,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (boxes: string[], changeBoxesCount: number) => 100000n,
+        () => 100000n,
       );
 
       // Check returned value
