@@ -135,5 +135,63 @@ describe('ErgoBoxSelection', () => {
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
     });
+
+    /**
+     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes
+     * as covered when boxes cover required assets and additional native token for the transaction fee
+     * @dependencies
+     * @scenario
+     * - mock an iterator to return 2 boxes
+     * - mock an AssetBalance object with assets less than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return first serialized box
+     * - additional assets should be correct
+     */
+    it('should return enough boxes as covered when boxes cover required assets and additional native token for the transaction fee', async () => {
+      // Mock an iterator to return 2 boxes
+      const iterator = testData.ergoBoxes.slice(0, 2).values();
+
+      // Mock an AssetBalance object with assets less than box assets
+      const requiredAssets: AssetBalance = {
+        nativeToken: 999900000n,
+        tokens: [
+          {
+            id: '962862f62ab4ad28cdc59cc321ea1dabd607178e49fcc817b1bbb997fb116375',
+            value: 100n,
+          },
+        ],
+      };
+
+      // Run test
+      const chain = new ErgoBoxSelection();
+      const result = await chain.getCoveringBoxes(
+        requiredAssets,
+        [],
+        emptyMap,
+        iterator,
+      );
+
+      // Check returned value
+      expect(result.covered).toEqual(true);
+      expect(result.boxes.map((box) => box.box_id().to_str())).toEqual([
+        testData.rawBoxes[0].boxId,
+        testData.rawBoxes[1].boxId,
+      ]);
+      const expectedAdditionalAssets: AssetBalance = {
+        nativeToken: 1000100000n,
+        tokens: [
+          {
+            id: '962862f62ab4ad28cdc59cc321ea1dabd607178e49fcc817b1bbb997fb116375',
+            value: 300n,
+          },
+        ],
+      };
+      expect(result.additionalAssets.aggregated).toEqual(
+        expectedAdditionalAssets,
+      );
+      expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+    });
   });
 });
