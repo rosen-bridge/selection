@@ -1,5 +1,5 @@
 import { AssetBalance } from '../lib';
-import TestBoxSelection from './TestBoxSelection';
+import TestBoxSelection from './testBoxSelection';
 
 describe('AbstractBoxSelection', () => {
   describe('getCoveringBoxes', () => {
