@@ -1,13 +1,10 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { AssetBalance, BoxInfo, CoveringBoxes } from './types';
+import { AssetBalance, BoxInfo, CoveringBoxes, FeeEstimator } from './types';
 
 export abstract class AbstractBoxSelection<BoxType> {
   protected readonly DEFAULT_MIN_BOX_VALUE: bigint = 0n;
   protected readonly DEFAULT_MAX_TOKEN_COUNT: number = 99999;
-  protected readonly DEFAULT_FEE_ESTIMATOR: (
-    selectedBoxes: BoxType[],
-    changeBoxesCount: number,
-  ) => bigint = () => 0n;
+  protected readonly DEFAULT_FEE_ESTIMATOR: FeeEstimator<BoxType> = () => 0n;
   readonly logger: AbstractLogger;
 
   constructor(logger?: AbstractLogger) {
