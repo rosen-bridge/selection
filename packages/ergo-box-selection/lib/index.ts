@@ -1,1 +1,1 @@
-export * from './ErgoBoxSelection';
+export * from './ergoBoxSelection';

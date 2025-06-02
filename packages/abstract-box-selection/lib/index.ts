@@ -1,2 +1,2 @@
-export * from './AbstractBoxSelection';
+export * from './abstractBoxSelection';
 export * from './types';

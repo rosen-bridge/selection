@@ -1,2 +1,2 @@
-export * from './CardanoBoxSelection';
+export * from './cardanoBoxSelection';
 export * from './types';
