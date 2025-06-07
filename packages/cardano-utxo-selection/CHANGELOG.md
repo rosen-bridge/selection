@@ -1,5 +1,13 @@
 # @rosen-bridge/cardano-utxo-selection
 
+## 2.0.1
+
+### Patch Changes
+
+- Fix build-time generated filenames
+- Update dependencies
+  - @rosen-bridge/abstract-box-selection@0.1.1
+
 ## 2.0.0
 
 ### Major Changes

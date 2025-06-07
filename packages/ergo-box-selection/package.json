@@ -1,6 +1,6 @@
 {
   "name": "@rosen-bridge/ergo-box-selection",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Typescript package to select enough Ergo utxos for required amount of assets",
   "repository": "https://github.com/rosen-bridge/selection",
   "license": "GPL-3.0",
@@ -35,7 +35,7 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@rosen-bridge/abstract-box-selection": "^0.1.0",
+    "@rosen-bridge/abstract-box-selection": "^0.1.1",
     "@rosen-bridge/abstract-logger": "^2.0.1",
     "ergo-lib-wasm-nodejs": "^0.24.1"
   }
