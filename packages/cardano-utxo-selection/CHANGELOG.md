@@ -1,5 +1,11 @@
 # @rosen-bridge/cardano-utxo-selection
 
+## 2.1.0
+
+### Minor Changes
+
+- Remove `address` field from `CardanoUtxo` interface
+
 ## 2.0.1
 
 ### Patch Changes
