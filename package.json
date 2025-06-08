@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "npm run build --workspaces",
+    "clean": "npm run clean --workspaces",
     "coverage": "npm run coverage --workspaces",
     "lint": "npm run lint --workspaces",
     "prepare": "husky install",
