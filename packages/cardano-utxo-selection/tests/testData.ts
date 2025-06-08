@@ -5,7 +5,6 @@ export const cardanoUtxos: CardanoUtxo[] = [
   {
     txId: '6699c2b892da307f8e3bf9329e9b17b397a7aff525f4caa8d05507b73a8392b5',
     index: 0,
-    address: 'address',
     value: 3000000n,
     assets: [
       {
