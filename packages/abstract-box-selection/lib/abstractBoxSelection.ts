@@ -176,6 +176,13 @@ export abstract class AbstractBoxSelection<BoxType> {
       }
     }
 
+    // subtract estimated fee from additional assets
+    const fee = estimateFee(
+      result,
+      Math.ceil(additionalAssets.tokens.length / maxTokenCount),
+    );
+    additionalAssets.nativeToken -= fee;
+
     const changeLength = Math.ceil(
       additionalAssets.tokens.length / maxTokenCount,
     );
@@ -203,6 +210,7 @@ export abstract class AbstractBoxSelection<BoxType> {
       additionalAssets: {
         aggregated: additionalAssets,
         list: separatedAssets,
+        fee: fee,
       },
     };
   };

@@ -14,6 +14,7 @@ export interface CoveringBoxes<BoxType> {
   additionalAssets: {
     aggregated: AssetBalance;
     list: Array<AssetBalance>;
+    fee: bigint;
   };
 }
 

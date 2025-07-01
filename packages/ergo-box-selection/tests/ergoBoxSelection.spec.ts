@@ -39,6 +39,9 @@ describe('ErgoBoxSelection', () => {
      * @expected
      * - it should return first serialized box
      * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets', async () => {
       // Mock an iterator to return 2 boxes
@@ -70,7 +73,7 @@ describe('ErgoBoxSelection', () => {
         testData.rawBoxes[0].boxId,
       ]);
       const expectedAdditionalAssets: AssetBalance = {
-        nativeToken: 100000000n,
+        nativeToken: 98900000n,
         tokens: [
           {
             id: '962862f62ab4ad28cdc59cc321ea1dabd607178e49fcc817b1bbb997fb116375',
@@ -82,6 +85,7 @@ describe('ErgoBoxSelection', () => {
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(1100000n);
     });
 
     /**
@@ -96,6 +100,9 @@ describe('ErgoBoxSelection', () => {
      * @expected
      * - it should return two serialized boxes
      * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for the change box', async () => {
       // Mock an iterator to return 3 boxes
@@ -122,7 +129,7 @@ describe('ErgoBoxSelection', () => {
         testData.rawBoxes.map((box) => box.boxId),
       );
       const expectedAdditionalAssets: AssetBalance = {
-        nativeToken: 1000000000n,
+        nativeToken: 998900000n,
         tokens: [
           {
             id: '962862f62ab4ad28cdc59cc321ea1dabd607178e49fcc817b1bbb997fb116375',
@@ -134,6 +141,7 @@ describe('ErgoBoxSelection', () => {
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(1100000n);
     });
 
     /**
@@ -148,6 +156,9 @@ describe('ErgoBoxSelection', () => {
      * @expected
      * - it should return first serialized box
      * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for the transaction fee', async () => {
       // Mock an iterator to return 2 boxes
@@ -180,7 +191,7 @@ describe('ErgoBoxSelection', () => {
         testData.rawBoxes[1].boxId,
       ]);
       const expectedAdditionalAssets: AssetBalance = {
-        nativeToken: 1000100000n,
+        nativeToken: 999000000n,
         tokens: [
           {
             id: '962862f62ab4ad28cdc59cc321ea1dabd607178e49fcc817b1bbb997fb116375',
@@ -192,6 +203,7 @@ describe('ErgoBoxSelection', () => {
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(1100000n);
     });
   });
 });
