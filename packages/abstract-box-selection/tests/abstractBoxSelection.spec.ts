@@ -18,6 +18,9 @@ describe('AbstractBoxSelection', () => {
      * @expected
      * - it should return first serialized box
      * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets', async () => {
       // Mock an iterator to return 2 boxes
@@ -71,6 +74,7 @@ describe('AbstractBoxSelection', () => {
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(0n);
     });
 
     /**
@@ -205,6 +209,10 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return all serialized boxes except the last one
+     * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when multiple boxes cover required assets', async () => {
       // Mock an iterator to return 12 boxes
@@ -257,6 +265,7 @@ describe('AbstractBoxSelection', () => {
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(0n);
     });
 
     /**
@@ -308,6 +317,10 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return serialized tracked box
+     * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when tracked boxes cover required assets', async () => {
       // Mock an iterator to return 2 boxes
@@ -373,6 +386,7 @@ describe('AbstractBoxSelection', () => {
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(0n);
     });
 
     /**
@@ -463,6 +477,10 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return second serialized box
+     * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return second box as covered when first box is not allowed', async () => {
       // Mock an iterator to return 2 boxes
@@ -519,6 +537,7 @@ describe('AbstractBoxSelection', () => {
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(0n);
     });
 
     /**
@@ -663,6 +682,9 @@ describe('AbstractBoxSelection', () => {
      * @expected
      * - it should return two serialized boxes
      * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for the change box', async () => {
       // Mock an iterator to return 2 boxes
@@ -717,6 +739,7 @@ describe('AbstractBoxSelection', () => {
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(0n);
     });
 
     /**
@@ -732,6 +755,9 @@ describe('AbstractBoxSelection', () => {
      * @expected
      * - it should return two serialized boxes
      * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for multiple change boxes', async () => {
       // Mock an iterator to return 2 boxes
@@ -805,6 +831,7 @@ describe('AbstractBoxSelection', () => {
           tokens: [{ id: 'token3', value: 3300n }],
         },
       ]);
+      expect(result.additionalAssets.fee).toEqual(0n);
     });
 
     /**
@@ -821,6 +848,9 @@ describe('AbstractBoxSelection', () => {
      * @expected
      * - it should return three serialized boxes
      * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for the change box and fee', async () => {
       // Mock an iterator to return 2 boxes
@@ -886,13 +916,14 @@ describe('AbstractBoxSelection', () => {
         'serialized-box-3',
       ]);
       const expectedAdditionalAssets: AssetBalance = {
-        nativeToken: 300000n,
+        nativeToken: 200000n,
         tokens: [{ id: 'token1', value: 300n }],
       };
       expect(result.additionalAssets.aggregated).toEqual(
         expectedAdditionalAssets,
       );
       expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(100000n);
     });
   });
 });
