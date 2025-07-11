@@ -65,13 +65,13 @@ export abstract class AbstractBoxSelection<BoxType> {
     const isNativeTokenRequired = () => {
       const requiredNative =
         uncoveredNativeToken > 0n ? uncoveredNativeToken : 0n;
-      const additionalRequired =
-        BigInt(Math.ceil(additionalAssets.tokens.length / maxTokenCount)) *
-        minBoxValue;
-      const fee = estimateFee(
-        result,
-        Math.ceil(additionalAssets.tokens.length / maxTokenCount),
-      );
+      const changeLength = additionalAssets.tokens.length
+        ? Math.ceil(additionalAssets.tokens.length / maxTokenCount)
+        : additionalAssets.nativeToken > 0n
+          ? 1
+          : 0;
+      const additionalRequired = BigInt(changeLength) * minBoxValue;
+      const fee = estimateFee(result, changeLength);
 
       return (
         requiredNative + additionalRequired + fee > additionalAssets.nativeToken
@@ -177,15 +177,14 @@ export abstract class AbstractBoxSelection<BoxType> {
     }
 
     // subtract estimated fee from additional assets
-    const fee = estimateFee(
-      result,
-      Math.ceil(additionalAssets.tokens.length / maxTokenCount),
-    );
+    const changeLength = additionalAssets.tokens.length
+      ? Math.ceil(additionalAssets.tokens.length / maxTokenCount)
+      : additionalAssets.nativeToken > 0n
+        ? 1
+        : 0;
+    const fee = estimateFee(result, changeLength);
     additionalAssets.nativeToken -= fee;
 
-    const changeLength = Math.ceil(
-      additionalAssets.tokens.length / maxTokenCount,
-    );
     const separatedAssets: Array<AssetBalance> = [];
     for (let i = 0; i < changeLength; i++) {
       separatedAssets.push({
