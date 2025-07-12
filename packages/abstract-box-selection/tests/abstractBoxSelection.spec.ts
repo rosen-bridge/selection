@@ -840,7 +840,7 @@ describe('AbstractBoxSelection', () => {
      * for the change box and fee
      * @dependencies
      * @scenario
-     * - mock an iterator to return 2 boxes
+     * - mock an iterator to return 3 boxes
      * - mock chain 'getBoxInfo' function to return mocked boxes assets
      * - mock an AssetBalance object with assets less than box assets
      * - run test
@@ -853,7 +853,7 @@ describe('AbstractBoxSelection', () => {
      *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for the change box and fee', async () => {
-      // Mock an iterator to return 2 boxes
+      // Mock an iterator to return 3 boxes
       const iterator = [
         'serialized-box-1',
         'serialized-box-2',
@@ -931,20 +931,21 @@ describe('AbstractBoxSelection', () => {
      * as covered with correct additional assets when it only contains native token
      * @dependencies
      * @scenario
-     * - mock an iterator to return 2 boxes
-     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an iterator to return 3 boxes
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets such that
+     *   no box contains tokens
      * - mock an AssetBalance object with assets less than box assets
      * - run test
      * - check returned value
      * @expected
-     * - it should return three serialized boxes
+     * - it should return two serialized boxes
      * - additional assets should be correct
      *   - aggregated balance
      *   - balance in list
      *   - estimated fee
      */
     it('should return enough boxes as covered with correct additional assets when it only contains native token', async () => {
-      // Mock an iterator to return 2 boxes
+      // Mock an iterator to return 3 boxes
       const iterator = [
         'serialized-box-1',
         'serialized-box-2',
