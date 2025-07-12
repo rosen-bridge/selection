@@ -840,7 +840,7 @@ describe('AbstractBoxSelection', () => {
      * for the change box and fee
      * @dependencies
      * @scenario
-     * - mock an iterator to return 2 boxes
+     * - mock an iterator to return 3 boxes
      * - mock chain 'getBoxInfo' function to return mocked boxes assets
      * - mock an AssetBalance object with assets less than box assets
      * - run test
@@ -853,7 +853,7 @@ describe('AbstractBoxSelection', () => {
      *   - estimated fee
      */
     it('should return enough boxes as covered when boxes cover required assets and additional native token for the change box and fee', async () => {
-      // Mock an iterator to return 2 boxes
+      // Mock an iterator to return 3 boxes
       const iterator = [
         'serialized-box-1',
         'serialized-box-2',
@@ -918,6 +918,94 @@ describe('AbstractBoxSelection', () => {
       const expectedAdditionalAssets: AssetBalance = {
         nativeToken: 200000n,
         tokens: [{ id: 'token1', value: 300n }],
+      };
+      expect(result.additionalAssets.aggregated).toEqual(
+        expectedAdditionalAssets,
+      );
+      expect(result.additionalAssets.list).toEqual([expectedAdditionalAssets]);
+      expect(result.additionalAssets.fee).toEqual(100000n);
+    });
+
+    /**
+     * @target AbstractBoxSelection.getCoveringBoxes should return enough boxes
+     * as covered with correct additional assets when it only contains native token
+     * @dependencies
+     * @scenario
+     * - mock an iterator to return 3 boxes
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets such that
+     *   no box contains tokens
+     * - mock an AssetBalance object with assets less than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return two serialized boxes
+     * - additional assets should be correct
+     *   - aggregated balance
+     *   - balance in list
+     *   - estimated fee
+     */
+    it('should return enough boxes as covered with correct additional assets when it only contains native token', async () => {
+      // Mock an iterator to return 3 boxes
+      const iterator = [
+        'serialized-box-1',
+        'serialized-box-2',
+        'serialized-box-3',
+      ].values();
+
+      // Mock chain 'getBoxInfo' function to return mocked boxes assets
+      const chain = new TestBoxSelection();
+      const getBoxInfoSpy = vi.spyOn(chain, 'getBoxInfo');
+      getBoxInfoSpy.mockImplementation((boxId: string) => {
+        if (boxId === 'serialized-box-1')
+          return {
+            id: 'box1',
+            assets: {
+              nativeToken: 10000000n,
+              tokens: [],
+            },
+          };
+        else if (boxId === 'serialized-box-2')
+          return {
+            id: 'box2',
+            assets: {
+              nativeToken: 10000000n,
+              tokens: [],
+            },
+          };
+        else if (boxId === 'serialized-box-3')
+          return {
+            id: 'box3',
+            assets: {
+              nativeToken: 20000000n,
+              tokens: [],
+            },
+          };
+        else throw Error(`'getBoxInfo' is not mocked for [${boxId}]`);
+      });
+
+      // Mock an AssetBalance object with assets less than box assets
+      const requiredAssets: AssetBalance = {
+        nativeToken: 15000000n,
+        tokens: [],
+      };
+
+      // Run test
+      const result = await chain.getCoveringBoxes(
+        requiredAssets,
+        [],
+        emptyMap,
+        iterator,
+        10000n,
+        undefined,
+        () => 100000n,
+      );
+
+      // Check returned value
+      expect(result.covered).toEqual(true);
+      expect(result.boxes).toEqual(['serialized-box-1', 'serialized-box-2']);
+      const expectedAdditionalAssets: AssetBalance = {
+        nativeToken: 4900000n,
+        tokens: [],
       };
       expect(result.additionalAssets.aggregated).toEqual(
         expectedAdditionalAssets,
