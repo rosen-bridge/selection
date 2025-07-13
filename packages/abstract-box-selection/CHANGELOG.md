@@ -1,5 +1,12 @@
 # @rosen-bridge/abstract-box-selection
 
+## 0.2.1
+
+### Patch Changes
+
+- Fix calculation of change box count
+- Fix bug where additional assets returning a token with zero amount
+
 ## 0.2.0
 
 ### Minor Changes

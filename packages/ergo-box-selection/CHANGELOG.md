@@ -1,5 +1,12 @@
 # @rosen-bridge/ergo-box-selection
 
+## 1.1.1
+
+### Patch Changes
+
+- Update dependencies
+  - @rosen-bridge/abstract-box-selection@0.2.1
+
 ## 1.1.0
 
 ### Minor Changes
