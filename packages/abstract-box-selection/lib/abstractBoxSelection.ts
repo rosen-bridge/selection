@@ -145,6 +145,8 @@ export abstract class AbstractBoxSelection<BoxType> {
             const requiredToken = uncoveredTokens[tokenIndex];
             if (requiredToken.value > boxToken.value) {
               requiredToken.value -= boxToken.value;
+            } else if (requiredToken.value === boxToken.value) {
+              uncoveredTokens.splice(tokenIndex, 1);
             } else {
               additionalAssets.tokens.push({
                 id: boxToken.id,
