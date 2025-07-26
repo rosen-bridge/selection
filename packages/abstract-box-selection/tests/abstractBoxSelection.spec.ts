@@ -893,7 +893,7 @@ describe('AbstractBoxSelection', () => {
 
       // Mock an AssetBalance object with assets less than box assets
       const requiredAssets: AssetBalance = {
-        nativeToken: 100000n,
+        nativeToken: 200000n,
         tokens: [{ id: 'token1', value: 100n }],
       };
 
@@ -916,7 +916,7 @@ describe('AbstractBoxSelection', () => {
         'serialized-box-3',
       ]);
       const expectedAdditionalAssets: AssetBalance = {
-        nativeToken: 200000n,
+        nativeToken: 100000n,
         tokens: [{ id: 'token1', value: 300n }],
       };
       expect(result.additionalAssets.aggregated).toEqual(
