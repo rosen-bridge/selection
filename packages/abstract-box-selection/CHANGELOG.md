@@ -1,5 +1,11 @@
 # @rosen-bridge/abstract-box-selection
 
+## 0.2.2
+
+### Patch Changes
+
+- Fix bug where selector returns wrong uncovered flag when additional assets is less than twice the fee plus minimum box value
+
 ## 0.2.1
 
 ### Patch Changes
