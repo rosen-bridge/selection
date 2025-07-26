@@ -177,6 +177,7 @@ export abstract class AbstractBoxSelection<BoxType> {
         break;
       }
     }
+    const covered = !isRequirementRemaining();
 
     // subtract estimated fee from additional assets
     const changeLength = additionalAssets.tokens.length
@@ -206,7 +207,7 @@ export abstract class AbstractBoxSelection<BoxType> {
           BigInt(changeLength);
 
     return {
-      covered: !isRequirementRemaining(),
+      covered: covered,
       boxes: result,
       additionalAssets: {
         aggregated: additionalAssets,
