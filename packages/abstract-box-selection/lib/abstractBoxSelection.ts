@@ -1,5 +1,11 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { AssetBalance, BoxInfo, CoveringBoxes, FeeEstimator } from './types';
+import {
+  AssetBalance,
+  BoxInfo,
+  CoveringBoxes,
+  FeeEstimator,
+  FilterFunction,
+} from './types';
 
 export abstract class AbstractBoxSelection<BoxType> {
   protected readonly DEFAULT_MIN_BOX_VALUE: bigint = 0n;
@@ -29,6 +35,7 @@ export abstract class AbstractBoxSelection<BoxType> {
    * @param minBoxValue the minimum amount of native token that should be in a box
    * @param maxTokenCount the maximum number of tokens that can be in a box
    * @param estimateFee a function to estimate the fee of the transaction based on selected boxes and suggested output count
+   * @param filterFunction a function to that specifies if the box is allowed
    * @returns an object containing the selected boxes, a boolean showing if requirements
    *  are covered or not and additionalAssets as aggregated and distributed into list based on `maxTokenCount`
    */
@@ -42,6 +49,7 @@ export abstract class AbstractBoxSelection<BoxType> {
     minBoxValue = this.DEFAULT_MIN_BOX_VALUE,
     maxTokenCount = this.DEFAULT_MAX_TOKEN_COUNT,
     estimateFee = this.DEFAULT_FEE_ESTIMATOR,
+    filterFunction?: FilterFunction<BoxType>,
   ): Promise<CoveringBoxes<BoxType>> => {
     if (maxTokenCount === 0) throw new Error(`maxTokenCount cannot be zero!`);
     let uncoveredNativeToken = requiredAssets.nativeToken;
@@ -112,7 +120,8 @@ export abstract class AbstractBoxSelection<BoxType> {
       if (
         skipBox ||
         forbiddenBoxIds.includes(boxInfo.id) ||
-        selectedBoxIds.includes(boxInfo.id)
+        selectedBoxIds.includes(boxInfo.id) ||
+        (filterFunction && !filterFunction(trackedBox!))
       ) {
         this.logger.debug(`box [${boxInfo.id}] is skipped`);
         continue;

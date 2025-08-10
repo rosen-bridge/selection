@@ -27,3 +27,5 @@ export type FeeEstimator<BoxType> = (
   selectedBoxes: Array<BoxType>,
   changeBoxesCount: number,
 ) => bigint;
+
+export type FilterFunction<BoxType> = (box: BoxType) => boolean;
