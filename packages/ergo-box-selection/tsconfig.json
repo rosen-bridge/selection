@@ -4,5 +4,8 @@
     "outDir": "./dist"
   },
   "include": ["tests", "lib", "vitest.config.ts"],
-  "references": [{ "path": "../abstract-box-selection" }]
+  "references": [
+    { "path": "../abstract-box-selection" },
+    { "path": "../selection-types" }
+  ]
 }

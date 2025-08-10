@@ -5,7 +5,7 @@ import {
   CoveringBoxes,
   FeeEstimator,
   FilterFunction,
-} from './types';
+} from '@rosen-bridge/selection-types';
 
 export abstract class AbstractBoxSelection<BoxType> {
   protected readonly DEFAULT_MIN_BOX_VALUE: bigint = 0n;
