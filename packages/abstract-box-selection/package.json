@@ -1,12 +1,12 @@
 {
   "name": "@rosen-bridge/abstract-box-selection",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "A Typescript package for general UTxO selection",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rosen-bridge/selection.git"
   },
-  "license": "GPL-3.0",
+  "license": "MIT",
   "author": "Rosen Team",
   "type": "module",
   "main": "dist/index.js",
