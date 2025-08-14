@@ -1,5 +1,15 @@
 # @rosen-bridge/abstract-box-selection
 
+## 0.3.0
+
+### Minor Changes
+
+- Add a new argument to `AbstractBoxSelection.getCoveringBoxes` that enables custom filters for boxes
+
+### Patch Changes
+
+- Re-export all types of `@rosen-bridge/abstract-box-selection` package
+
 ## 0.2.2
 
 ### Patch Changes

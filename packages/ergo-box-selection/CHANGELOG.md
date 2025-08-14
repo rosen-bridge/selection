@@ -1,5 +1,13 @@
 # @rosen-bridge/ergo-box-selection
 
+## 1.1.3
+
+### Patch Changes
+
+- Re-export all types of `@rosen-bridge/abstract-box-selection` package
+- Update dependencies
+  - @rosen-bridge/abstract-box-selection@0.3.0
+
 ## 1.1.2
 
 ### Patch Changes

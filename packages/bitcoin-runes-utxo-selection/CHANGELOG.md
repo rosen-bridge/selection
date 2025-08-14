@@ -1,5 +1,13 @@
 # @rosen-bridge/bitcoin-runes-utxo-selection
 
+## 1.0.3
+
+### Patch Changes
+
+- Re-export all types of `@rosen-bridge/abstract-box-selection` package
+- Update dependencies
+  - @rosen-bridge/abstract-box-selection@0.3.0
+
 ## 1.0.2
 
 ### Patch Changes
