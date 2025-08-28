@@ -89,6 +89,7 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return both serialized boxes
+     * - uncovered assets should be correct
      */
     it('should return all boxes as NOT covered when boxes do NOT cover required assets', async () => {
       // Mock an iterator to return 2 boxes
@@ -134,6 +135,8 @@ describe('AbstractBoxSelection', () => {
       // Check returned value
       expect(result.covered).toEqual(false);
       expect(result.boxes).toEqual(['serialized-box-1', 'serialized-box-2']);
+      expect(result.uncoveredAssets?.nativeToken).toEqual(100000n);
+      expect(result.uncoveredAssets?.tokens).toEqual([]);
     });
 
     /**
@@ -149,6 +152,7 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return first serialized box
+     * - uncovered assets should be correct
      */
     it('should return all useful boxes as NOT covered when boxes do NOT cover required tokens', async () => {
       // Mock an iterator to return 2 boxes
@@ -195,6 +199,10 @@ describe('AbstractBoxSelection', () => {
       // Check returned value
       expect(result.covered).toEqual(false);
       expect(result.boxes).toEqual(['serialized-box-1']);
+      expect(result.uncoveredAssets?.nativeToken).toEqual(0n);
+      expect(result.uncoveredAssets?.tokens).toEqual([
+        { id: 'token1', value: 100n },
+      ]);
     });
 
     /**
@@ -279,6 +287,7 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return empty list
+     * - uncovered assets should be correct
      */
     it('should return no boxes as NOT covered when address has no boxes', async () => {
       // Mock an iterator to return NO boxes
@@ -302,6 +311,10 @@ describe('AbstractBoxSelection', () => {
       // Check returned value
       expect(result.covered).toEqual(false);
       expect(result.boxes).toEqual([]);
+      expect(result.uncoveredAssets?.nativeToken).toEqual(100000n);
+      expect(result.uncoveredAssets?.tokens).toEqual([
+        { id: 'token1', value: 900n },
+      ]);
     });
 
     /**
@@ -402,6 +415,7 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return serialized tracked boxes
+     * - uncovered assets should be correct
      */
     it('should return all boxes as NOT covered when tracked boxes do NOT cover required assets', async () => {
       // Mock an iterator to return 2 boxes
@@ -461,6 +475,10 @@ describe('AbstractBoxSelection', () => {
       expect(result.boxes).toEqual([
         'serialized-tracked-box-1',
         'serialized-box-2',
+      ]);
+      expect(result.uncoveredAssets?.nativeToken).toEqual(10000n);
+      expect(result.uncoveredAssets?.tokens).toEqual([
+        { id: 'token1', value: 40n },
       ]);
     });
 
@@ -553,6 +571,7 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return empty list
+     * - uncovered assets should be correct
      */
     it('should return no boxes as NOT covered when tracking ends to no box', async () => {
       // Mock an iterator to return one box
@@ -594,6 +613,10 @@ describe('AbstractBoxSelection', () => {
       // Check returned value
       expect(result.covered).toEqual(false);
       expect(result.boxes).toEqual([]);
+      expect(result.uncoveredAssets?.nativeToken).toEqual(50000n);
+      expect(result.uncoveredAssets?.tokens).toEqual([
+        { id: 'token1', value: 100n },
+      ]);
     });
 
     /**
@@ -609,6 +632,7 @@ describe('AbstractBoxSelection', () => {
      * - check returned value
      * @expected
      * - it should return serialized tracked boxes
+     * - uncovered assets should be correct
      */
     it('should return all boxes as NOT covered when two boxes are tracked to same box', async () => {
       // Mock an iterator to return 2 boxes
@@ -667,6 +691,10 @@ describe('AbstractBoxSelection', () => {
       // Check returned value
       expect(result.covered).toEqual(false);
       expect(result.boxes).toEqual(['serialized-tracked-box-1']);
+      expect(result.uncoveredAssets?.nativeToken).toEqual(70000n);
+      expect(result.uncoveredAssets?.tokens).toEqual([
+        { id: 'token1', value: 100n },
+      ]);
     });
 
     /**
