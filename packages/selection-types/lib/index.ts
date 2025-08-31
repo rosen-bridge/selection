@@ -16,6 +16,7 @@ export interface CoveringBoxes<BoxType> {
     list: Array<AssetBalance>;
     fee: bigint;
   };
+  uncoveredAssets?: AssetBalance;
 }
 
 export interface BoxInfo {

@@ -70,7 +70,7 @@ export abstract class AbstractBoxSelection<BoxType> {
      * - fee of the transaction
      * @returns true if native token is required to cover the remaining requirements
      */
-    const isNativeTokenRequired = () => {
+    const requiredNativeToken = () => {
       const requiredNative =
         uncoveredNativeToken > 0n ? uncoveredNativeToken : 0n;
       const changeLength = additionalAssets.tokens.length
@@ -81,12 +81,16 @@ export abstract class AbstractBoxSelection<BoxType> {
       const additionalRequired = BigInt(changeLength) * minBoxValue;
       const fee = estimateFee(result, changeLength);
 
-      return (
-        requiredNative + additionalRequired + fee > additionalAssets.nativeToken
-      );
+      return requiredNative + additionalRequired + fee >
+        additionalAssets.nativeToken
+        ? requiredNative +
+            additionalRequired +
+            fee -
+            additionalAssets.nativeToken
+        : 0n;
     };
     const isRequirementRemaining = () =>
-      uncoveredTokens.length > 0 || isNativeTokenRequired();
+      uncoveredTokens.length > 0 || requiredNativeToken() > 0n;
 
     // get boxes until requirements are satisfied
     while (isRequirementRemaining()) {
@@ -129,7 +133,7 @@ export abstract class AbstractBoxSelection<BoxType> {
 
       // check and add if box assets are useful to requirements
       if (
-        isNativeTokenRequired() ||
+        requiredNativeToken() > 0n ||
         boxInfo.assets.tokens.some((boxToken) =>
           uncoveredTokens.find(
             (requiredToken) => requiredToken.id === boxToken.id,
@@ -188,6 +192,15 @@ export abstract class AbstractBoxSelection<BoxType> {
     }
     const covered = !isRequirementRemaining();
 
+    // calculate uncovered assets
+    let uncoveredAssets: AssetBalance | undefined = undefined;
+    if (covered === false) {
+      uncoveredAssets = {
+        nativeToken: requiredNativeToken(),
+        tokens: uncoveredTokens,
+      };
+    }
+
     // subtract estimated fee from additional assets
     const changeLength = additionalAssets.tokens.length
       ? Math.ceil(additionalAssets.tokens.length / maxTokenCount)
@@ -223,6 +236,7 @@ export abstract class AbstractBoxSelection<BoxType> {
         list: separatedAssets,
         fee: fee,
       },
+      uncoveredAssets: uncoveredAssets,
     };
   };
 }
