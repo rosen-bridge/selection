@@ -9,4 +9,5 @@ export interface CardanoUtxo {
   index: number;
   value: bigint;
   assets: Array<CardanoAsset>;
+  address?: string;
 }
