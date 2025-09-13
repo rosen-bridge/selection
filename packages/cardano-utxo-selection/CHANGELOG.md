@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- Add optional field address into CardanoUtxo interface
+- Add optional `address` field into CardanoUtxo interface
 - Add `uncoveredAssets` field to `getCoveringBoxes` returning object when boxes cannot cover the required assets
 
 ### Patch Changes
