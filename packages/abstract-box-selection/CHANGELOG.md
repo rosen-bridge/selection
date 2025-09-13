@@ -1,5 +1,16 @@
 # @rosen-bridge/abstract-box-selection
 
+## 0.4.0
+
+### Minor Changes
+
+- Add `uncoveredAssets` field to `getCoveringBoxes` returning object when boxes cannot cover the required assets
+
+### Patch Changes
+
+- Update dependencies
+  - @rosen-bridge/selection-types@0.2.0
+
 ## 0.3.0
 
 ### Minor Changes

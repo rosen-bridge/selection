@@ -1,5 +1,18 @@
 # @rosen-bridge/cardano-utxo-selection
 
+## 2.3.0
+
+### Minor Changes
+
+- Add optional `address` field into CardanoUtxo interface
+- Add `uncoveredAssets` field to `getCoveringBoxes` returning object when boxes cannot cover the required assets
+
+### Patch Changes
+
+- Update dependencies
+  - @rosen-bridge/abstract-box-selection@0.4.0
+  - @rosen-bridge/selection-types@0.2.0
+
 ## 2.2.3
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @rosen-bridge/bitcoin-utxo-selection
 
+## 1.2.0
+
+### Minor Changes
+
+- Add `uncoveredAssets` field to `getCoveringBoxes` returning object when boxes cannot cover the required assets
+
+### Patch Changes
+
+- Update dependencies
+  - @rosen-bridge/abstract-box-selection@0.4.0
+  - @rosen-bridge/selection-types@0.2.0
+
 ## 1.1.3
 
 ### Patch Changes
