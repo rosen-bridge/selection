@@ -1,11 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist"
+    "outDir": "./dist",
   },
   "include": ["tests", "lib", "vitest.config.ts"],
   "references": [
     { "path": "../abstract-box-selection" },
-    { "path": "../selection-types" }
-  ]
+    { "path": "../selection-types" },
+  ],
 }
