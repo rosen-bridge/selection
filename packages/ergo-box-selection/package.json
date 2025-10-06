@@ -20,31 +20,27 @@
     "clean": "rimraf dist && rimraf tsconfig.build.tsbuildinfo",
     "coverage": "npm run test -- --run --coverage",
     "lint": "eslint --fix . && npm run prettify",
-    "prettify": "prettier --write . --ignore-path ./.gitignore",
+    "lint:check": "eslint . && npm run prettify:check",
+    "prettify": "prettier --write . --ignore-path ../../.gitignore",
+    "prettify:check": "prettier --check . --ignore-path ../../.gitignore",
     "release": "npm run clean && npm run build && npm run test -- --run && npm publish --access public",
     "test": "NODE_OPTIONS='--import tsx' vitest",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^20.11.9",
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
-    "@typescript-eslint/parser": "^6.19.1",
     "@vitest/coverage-istanbul": "^3.1.4",
-    "eslint": "^8.56.0",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.2.4",
     "rimraf": "^6.0.1",
-    "tsx": "^4.19.2",
-    "typescript": "^5.3.3",
+    "tsx": "^4.20.5",
+    "typescript": "^5.8.3",
     "vitest": "^3.1.4"
-  },
-  "engines": {
-    "node": ">=20.11.0"
   },
   "dependencies": {
     "@rosen-bridge/abstract-box-selection": "^0.4.0",
     "@rosen-bridge/abstract-logger": "^2.0.1",
     "@rosen-bridge/selection-types": "^0.2.0",
     "ergo-lib-wasm-nodejs": "^0.24.1"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }
