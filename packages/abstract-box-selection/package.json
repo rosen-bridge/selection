@@ -1,6 +1,6 @@
 {
   "name": "@rosen-bridge/abstract-box-selection",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "description": "A Typescript package for general UTxO selection",
   "repository": {
     "type": "git",
@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^3.0.0",
-    "@rosen-bridge/selection-types": "^0.2.0"
+    "@rosen-bridge/selection-types": "^1.0.0"
   },
   "engines": {
     "node": ">=22.18.0"
