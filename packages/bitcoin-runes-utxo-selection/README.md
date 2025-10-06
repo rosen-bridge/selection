@@ -29,8 +29,8 @@ yarn add @rosen-bridge/bitcoin-runes-utxo-selection
 Here's a basic example of how to use this package:
 
 ```typescript
-import { BitcoinRunesBoxSelection } from '@rosen-bridge/bitcoin-runes-utxo-selection';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
+import { BitcoinRunesBoxSelection } from '@rosen-bridge/bitcoin-runes-utxo-selection';
 
 // Create the selection instance
 const selector = new BitcoinRunesBoxSelection(new DummyLogger());

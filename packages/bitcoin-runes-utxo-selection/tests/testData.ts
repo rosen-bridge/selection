@@ -1,4 +1,5 @@
 import { BoxInfo } from '@rosen-bridge/abstract-box-selection';
+
 import { BitcoinRunesUtxo } from '../lib';
 
 export const bitcoinUtxos: BitcoinRunesUtxo[] = [

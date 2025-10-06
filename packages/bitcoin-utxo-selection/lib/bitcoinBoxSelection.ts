@@ -2,6 +2,7 @@ import {
   AbstractBoxSelection,
   BoxInfo,
 } from '@rosen-bridge/abstract-box-selection';
+
 import { BitcoinUtxo } from './types';
 
 export class BitcoinBoxSelection extends AbstractBoxSelection<BitcoinUtxo> {

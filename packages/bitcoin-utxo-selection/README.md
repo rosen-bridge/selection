@@ -29,8 +29,8 @@ yarn add @rosen-bridge/bitcoin-utxo-selection
 Here's a basic example of how to use this package:
 
 ```typescript
-import { BitcoinBoxSelection } from '@rosen-bridge/bitcoin-utxo-selection';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
+import { BitcoinBoxSelection } from '@rosen-bridge/bitcoin-utxo-selection';
 
 // Create a fee estimator
 // An example fee estimator for a transaction with only native-segwit inputs and outputs and 3 fee ratio

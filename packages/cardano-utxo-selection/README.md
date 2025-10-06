@@ -29,8 +29,8 @@ yarn add @rosen-bridge/cardano-utxo-selection
 Here's a basic example of how to use this package:
 
 ```typescript
-import { CardanoBoxSelection } from '@rosen-bridge/cardano-utxo-selection';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
+import { CardanoBoxSelection } from '@rosen-bridge/cardano-utxo-selection';
 
 // Create the selection instance
 const selector = new CardanoBoxSelection(new DummyLogger());

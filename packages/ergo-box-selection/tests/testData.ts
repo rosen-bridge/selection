@@ -1,5 +1,6 @@
-import { BoxInfo } from '@rosen-bridge/abstract-box-selection';
 import { ErgoBox } from 'ergo-lib-wasm-nodejs';
+
+import { BoxInfo } from '@rosen-bridge/abstract-box-selection';
 
 export const rawBoxes = [
   {
