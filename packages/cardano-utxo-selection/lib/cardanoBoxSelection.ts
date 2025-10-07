@@ -3,6 +3,7 @@ import {
   BoxInfo,
   TokenInfo,
 } from '@rosen-bridge/abstract-box-selection';
+
 import { CardanoUtxo } from './types';
 
 export class CardanoBoxSelection extends AbstractBoxSelection<CardanoUtxo> {

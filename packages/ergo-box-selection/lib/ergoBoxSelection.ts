@@ -1,10 +1,11 @@
 import { ErgoBox } from 'ergo-lib-wasm-nodejs';
+
 import {
   AbstractBoxSelection,
   BoxInfo,
   FeeEstimator,
-  TokenInfo,
 } from '@rosen-bridge/abstract-box-selection';
+import { TokenInfo } from '@rosen-bridge/abstract-box-selection';
 
 export class ErgoBoxSelection extends AbstractBoxSelection<ErgoBox> {
   protected readonly DEFAULT_MIN_BOX_VALUE = 100000n;

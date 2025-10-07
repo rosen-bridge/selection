@@ -1,5 +1,7 @@
-import { AssetBalance } from '@rosen-bridge/abstract-box-selection';
 import { ErgoBox } from 'ergo-lib-wasm-nodejs';
+
+import { AssetBalance } from '@rosen-bridge/abstract-box-selection';
+
 import { ErgoBoxSelection } from '../lib';
 import * as testData from './testData';
 

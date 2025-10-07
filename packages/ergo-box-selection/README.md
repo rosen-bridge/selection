@@ -29,8 +29,8 @@ yarn add @rosen-bridge/ergo-box-selection
 Here's a basic example of how to use this package:
 
 ```typescript
-import { ErgoBoxSelection } from '@rosen-bridge/ergo-box-selection';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
+import { ErgoBoxSelection } from '@rosen-bridge/ergo-box-selection';
 
 // Create the selection instance
 const selector = new ErgoBoxSelection(new DummyLogger());
