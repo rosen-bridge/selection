@@ -1,6 +1,6 @@
 {
   "name": "@rosen-bridge/selection-types",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Typescript package containing types of general UTxO selection",
   "repository": {
     "type": "git",
