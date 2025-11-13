@@ -25,9 +25,6 @@
     "release": "npm run clean && npm run build && npm publish --access public",
     "type-check": "tsc --noEmit"
   },
-  "devDependencies": {
-    "tsx": "^4.20.5"
-  },
   "engines": {
     "node": ">=22.18.0"
   }

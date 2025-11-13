@@ -2,6 +2,7 @@ image: node:22.18.0
 
 stages:
   - installation
+  - knip
   - build
   - type-check
   - lint
@@ -17,7 +18,19 @@ installation:
       - node_modules
       - '**/node_modules'
   script:
+    - npm i -g npm@11.6.2
     - npm ci
+
+knip:
+  stage: knip
+  cache:
+    key: $CI_COMMIT_REF_NAME
+    policy: pull
+    paths:
+      - node_modules
+      - '**/node_modules'
+  script:
+    - npx knip --dependencies
 
 type-check:
   stage: type-check
