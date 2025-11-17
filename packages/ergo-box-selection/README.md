@@ -88,3 +88,38 @@ const result = await selector.getCoveringBoxes(
   3, // max token count
 );
 ```
+
+### Building Change Boxes
+
+After selecting boxes, you can build one or more change boxes using `ErgoChangeBoxBuilder`. It accepts either a static change address or a function that provides fresh addresses, optional register values, and the asset breakdown returned by `getCoveringBoxes`.
+
+```typescript
+import {
+  ErgoBoxSelection,
+  ErgoChangeBoxBuilder,
+} from '@rosen-bridge/ergo-box-selection';
+
+const selection = new ErgoBoxSelection();
+const covering = await selection.getCoveringBoxes(
+  requiredAssets,
+  forbiddenIds,
+  new Map(),
+  boxes.values(),
+);
+
+if (!covering.covered) throw new Error('Insufficient inputs');
+
+const changeBuilder = new ErgoChangeBoxBuilder(
+  () => nextChangeAddress(), // or a fixed base58 string
+);
+
+const changeBoxes = changeBuilder.build({
+  inputBoxes: covering.boxes,
+  outputBoxes, // array of ErgoBoxCandidate representing planned outputs
+  // omit height to reuse the max creation height among output candidates
+  fee: covering.additionalAssets.fee,
+  changeAssets: covering.additionalAssets.list,
+});
+```
+
+Pass `registerValues` (a `Map` or plain object keyed by register id) to apply the same register content to every produced change box.
