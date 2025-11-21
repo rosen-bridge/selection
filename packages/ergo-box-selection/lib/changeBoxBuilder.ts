@@ -2,31 +2,16 @@ import * as ergoLib from 'ergo-lib-wasm-nodejs';
 
 import { AssetBalance, TokenInfo } from '@rosen-bridge/selection-types';
 
-export type ChangeAddressInput = string | (() => string);
-
-export interface ErgoChangeBoxBuilderConfig {
-  minChangeBoxValue?: bigint;
-}
-
-export interface BuildChangeBoxesParams {
-  inputBoxes: Array<ergoLib.ErgoBox>;
-  outputBoxes: Array<ergoLib.ErgoBoxCandidate>;
-  height?: number;
-  fee?: bigint | number | string;
-  changeAssets?: Array<AssetBalance>;
-  registerValues?:
-    | Map<number, ergoLib.Constant>
-    | Partial<Record<number, ergoLib.Constant>>;
-}
+import {
+  BuildChangeBoxesParams,
+  ChangeAddressInput,
+  RegisterValuesInput,
+} from './changeBoxBuilder.types';
 
 export class ErgoChangeBoxBuilder {
   private readonly changeAddressProvider: () => string;
-  private readonly minChangeBoxValue: bigint;
 
-  constructor(
-    changeAddress: ChangeAddressInput,
-    config?: ErgoChangeBoxBuilderConfig,
-  ) {
+  constructor(changeAddress: ChangeAddressInput) {
     if (!changeAddress) {
       throw new Error(
         'Change address (string or generator function) is required',
@@ -34,13 +19,12 @@ export class ErgoChangeBoxBuilder {
     }
     this.changeAddressProvider =
       typeof changeAddress === 'function' ? changeAddress : () => changeAddress;
-    this.minChangeBoxValue = config?.minChangeBoxValue ?? 100000n;
   }
 
   /**
-   * Builds change boxes for the provided input and output boxes
-   * @param params build parameters
-   * @returns list of ErgoBoxCandidates representing the change boxes
+   * Builds change boxes for the provided transaction context.
+   * @param params configuration including inputs, outputs, fee, registers and optional change assets
+   * @returns list of ErgoBox candidates representing the change boxes
    */
   build = (params: BuildChangeBoxesParams): Array<ergoLib.ErgoBoxCandidate> => {
     const { inputBoxes, outputBoxes, height, changeAssets, registerValues } =
@@ -74,7 +58,12 @@ export class ErgoChangeBoxBuilder {
     }
 
     const changeNative = totalInputNative - totalOutputNative - fee;
-    const changeTokens = this.calculateChangeTokens(inputTokens, outputTokens);
+    const firstInputBoxId = inputBoxes[0].box_id().to_str();
+    const changeTokens = this.calculateChangeTokens(
+      inputTokens,
+      outputTokens,
+      firstInputBoxId,
+    );
 
     if (changeNative === 0n && changeTokens.size === 0) {
       return [];
@@ -82,24 +71,26 @@ export class ErgoChangeBoxBuilder {
 
     if (changeTokens.size > 0 && changeNative <= 0n) {
       throw new Error(
-        'Remaining tokens require a change box but no ERG is left after accounting for outputs and fee',
+        `Remaining tokens ${changeTokens.toString()} require a change box but no ERG is left after accounting for outputs and fee`,
       );
     }
 
-    const changeAssetGroups = this.prepareChangeAssetGroups(
+    const finalChangeAssets = this.prepareChangeAssetGroups(
       changeNative,
       changeTokens,
       changeAssets,
     );
     const registerEntries = this.normalizeRegisterEntries(registerValues);
 
-    return changeAssetGroups.map((assets, index) =>
+    return finalChangeAssets.map((assets, index) =>
       this.buildChangeBox(assets, resolvedHeight, registerEntries, index),
     );
   };
 
   /**
-   * Derives creation height from provided output candidates
+   * Derives the box creation height from output candidates when height is not provided.
+   * @param outputBoxes transaction outputs
+   * @returns maximum creation height across outputs
    */
   private deriveHeightFromOutputs = (
     outputBoxes: Array<ergoLib.ErgoBoxCandidate>,
@@ -118,7 +109,9 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Aggregates assets from Ergo boxes
+   * Aggregates native/token assets from the given Ergo boxes.
+   * @param boxes selected input boxes
+   * @returns aggregated native token total and a token map
    */
   private aggregateBoxAssets = (
     boxes: Array<ergoLib.ErgoBox>,
@@ -141,7 +134,9 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Aggregates assets from Ergo box candidates
+   * Aggregates native/token assets from the provided output candidates.
+   * @param candidates desired transaction outputs
+   * @returns aggregated native token total and a token map
    */
   private aggregateCandidateAssets = (
     candidates: Array<ergoLib.ErgoBoxCandidate>,
@@ -164,18 +159,27 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Calculates change tokens by subtracting output tokens from input tokens
+   * Calculates remaining tokens after satisfying outputs while honoring minted tokens.
+   * @param inputTokens assets gathered from input boxes
+   * @param outputTokens assets consumed by planned outputs
+   * @param mintedTokenId optional token id minted in this transaction (first input id)
+   * @returns tokens that should be returned as change
    */
   private calculateChangeTokens = (
     inputTokens: Map<string, bigint>,
     outputTokens: Map<string, bigint>,
+    mintedTokenId?: string,
   ): Map<string, bigint> => {
     const changeTokens = new Map(inputTokens);
 
     outputTokens.forEach((amount, id) => {
       if (!changeTokens.has(id)) {
-        // Minted tokens are not part of change calculation
-        return;
+        if (mintedTokenId && id === mintedTokenId) {
+          return;
+        }
+        throw new Error(
+          `Token [${id}] exists in outputs but not in inputs and is not minted in this transaction`,
+        );
       }
       const remaining = (changeTokens.get(id) ?? 0n) - amount;
       if (remaining < 0n) {
@@ -193,8 +197,11 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Prepares change asset groups either from provided assets (e.g. selection output)
-   * or by creating a default single change box
+   * Determines the final change asset groups to build boxes from.
+   * @param changeNative remaining native token amount
+   * @param changeTokens remaining tokens
+   * @param providedAssets optional explicit change distribution
+   * @returns array of change asset balances
    */
   private prepareChangeAssetGroups = (
     changeNative: bigint,
@@ -205,21 +212,15 @@ export class ErgoChangeBoxBuilder {
       return this.buildDefaultChangeAssets(changeNative, changeTokens);
     }
 
-    const normalizedAssets = providedAssets.map((assets) => ({
-      nativeToken: assets.nativeToken,
-      tokens: assets.tokens.map((token) => ({ ...token })),
-    }));
-
-    this.validateChangeAssetGroups(
-      changeNative,
-      changeTokens,
-      normalizedAssets,
-    );
-    return normalizedAssets;
+    this.validateChangeAssetGroups(changeNative, changeTokens, providedAssets);
+    return providedAssets;
   };
 
   /**
-   * Builds a default change asset group if no asset distribution is provided
+   * Builds the default single change asset group when caller does not pass one.
+   * @param changeNative remaining native token amount
+   * @param changeTokens remaining tokens
+   * @returns list containing a single asset balance (or empty when nothing to return)
    */
   private buildDefaultChangeAssets = (
     changeNative: bigint,
@@ -229,11 +230,7 @@ export class ErgoChangeBoxBuilder {
       return [];
     }
 
-    if (changeTokens.size > 0 && changeNative < this.minChangeBoxValue) {
-      throw new Error(
-        `Not enough ERG (${changeNative}) to create a change box containing tokens; minimum required is ${this.minChangeBoxValue}`,
-      );
-    }
+    // minChangeBoxValue will be validated when building the actual box
 
     if (changeNative <= 0n && changeTokens.size > 0) {
       throw new Error(
@@ -261,7 +258,10 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Validates that provided change assets align with calculated change
+   * Validates that provided change assets align with computed surplus.
+   * @param changeNative remaining native token amount
+   * @param changeTokens remaining tokens
+   * @param groups caller-provided change asset groups
    */
   private validateChangeAssetGroups = (
     changeNative: bigint,
@@ -313,7 +313,12 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Builds an Ergo change box based on the provided assets
+   * Builds an Ergo change box candidate for a specific asset group.
+   * @param assets asset balance assigned to the change box
+   * @param height creation height
+   * @param registerEntries shared register values
+   * @param index 0-based index used for error messages
+   * @returns constructed ErgoBoxCandidate
    */
   private buildChangeBox = (
     assets: AssetBalance,
@@ -331,28 +336,16 @@ export class ErgoChangeBoxBuilder {
         `Negative ERG amount detected for change box #${index + 1}`,
       );
     }
-    if (
-      assets.tokens.length > 0 &&
-      assets.nativeToken < this.minChangeBoxValue
-    ) {
-      throw new Error(
-        `Not enough ERG (${assets.nativeToken}) to hold tokens in change box #${index + 1}; minimum required is ${this.minChangeBoxValue}`,
-      );
-    }
-    if (assets.tokens.length > 0 && assets.nativeToken === 0n) {
-      throw new Error(
-        `Tokens detected without ERG in change box #${index + 1}`,
-      );
-    }
     if (assets.nativeToken === 0n && assets.tokens.length === 0) {
       throw new Error(`Change box #${index + 1} has no assets assigned`);
     }
 
     const address = this.resolveAddress(this.changeAddressProvider());
+    const boxValue = ergoLib.BoxValue.from_i64(
+      ergoLib.I64.from_str(assets.nativeToken.toString()),
+    );
     const builder = new ergoLib.ErgoBoxCandidateBuilder(
-      ergoLib.BoxValue.from_i64(
-        ergoLib.I64.from_str(assets.nativeToken.toString()),
-      ),
+      boxValue,
       ergoLib.Contract.pay_to_address(address),
       height,
     );
@@ -370,16 +363,40 @@ export class ErgoChangeBoxBuilder {
       builder.set_register_value(id, value);
     });
 
+    const minBoxValue = this.calculateMinBoxValue(builder, boxValue);
+    if (assets.nativeToken < minBoxValue) {
+      throw new Error(
+        `Not enough ERG (${assets.nativeToken}) for change box #${index + 1}; minimum required is ${minBoxValue}`,
+      );
+    }
+
     return builder.build();
   };
 
   /**
-   * Normalizes register entries to an array of tuples and validates IDs
+   * Temporarily adjusts builder value to fetch WASM-calculated minimal box value.
+   * @param builder box candidate builder
+   * @param originalValue requested box value
+   * @returns minimal nanoERG amount to satisfy size requirements
+   */
+  private calculateMinBoxValue = (
+    builder: ergoLib.ErgoBoxCandidateBuilder,
+    originalValue: ergoLib.BoxValue,
+  ): bigint => {
+    const safeValue = ergoLib.BoxValue.SAFE_USER_MIN();
+    builder.set_value(safeValue);
+    const minValue = BigInt(builder.calc_min_box_value().as_i64().to_str());
+    builder.set_value(originalValue);
+    return minValue;
+  };
+
+  /**
+   * Normalizes register entries to tuples and validates register ids.
+   * @param registerValues map/object describing R4-R9 contents
+   * @returns normalized list of register entries
    */
   private normalizeRegisterEntries = (
-    registerValues?:
-      | Map<number, ergoLib.Constant>
-      | Partial<Record<number, ergoLib.Constant>>,
+    registerValues?: RegisterValuesInput,
   ): Array<[number, ergoLib.Constant]> => {
     if (!registerValues) return [];
 
@@ -408,7 +425,9 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Normalizes fee input to bigint
+   * Normalizes fee input to bigint.
+   * @param fee optional numeric, bigint or string fee
+   * @returns fee as bigint
    */
   private normalizeFee = (fee?: bigint | number | string): bigint => {
     if (fee === undefined) return 0n;
@@ -423,7 +442,9 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Resolves change address string to an Ergo address instance
+   * Resolves change address string to an Ergo address instance.
+   * @param address base58 change address
+   * @returns ergo-lib address instance
    */
   private resolveAddress = (address: string): ergoLib.Address => {
     try {
@@ -431,7 +452,9 @@ export class ErgoChangeBoxBuilder {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unknown address error';
-      throw new Error(`Invalid change address provided: ${message}`);
+      throw new Error(
+        `Invalid change address provided for address [${address}]: ${message}`,
+      );
     }
   };
 }
