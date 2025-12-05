@@ -1,16 +1,15 @@
 import * as ergoLib from 'ergo-lib-wasm-nodejs';
 
-import * as testData from './testData';
+import { CHANGE_ADDRESS, HEIGHT } from './testData';
 
-export const CHANGE_ADDRESS =
-  '9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA';
-export const HEIGHT = 1400000;
-export const FEE = 1100000n;
-export const TOKEN_ID = testData.rawBoxes[0].assets[0].tokenId;
-export const UNKNOWN_TOKEN_ID =
-  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-export const MINTED_TOKEN_ID = testData.rawBoxes[0].boxId;
-
+/**
+ * Builds an ErgoBoxCandidate with the given value, tokens, address, and height.
+ * @param value - The value of the box in nanoERG.
+ * @param tokens - An array of objects with id and value properties.
+ * @param address - The address of the box.
+ * @param height - The height of the box.
+ * @returns An ErgoBoxCandidate.
+ */
 export const buildCandidate = (
   value: bigint,
   tokens: Array<{ id: string; value: bigint }>,

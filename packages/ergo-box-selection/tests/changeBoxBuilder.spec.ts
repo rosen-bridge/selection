@@ -2,6 +2,7 @@ import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import { describe, expect, it } from 'vitest';
 
 import { AssetBalance, ErgoChangeBoxBuilder } from '../lib';
+import { buildCandidate } from './changeBoxBuilder.mocks';
 import {
   CHANGE_ADDRESS,
   FEE,
@@ -9,20 +10,22 @@ import {
   MINTED_TOKEN_ID,
   TOKEN_ID,
   UNKNOWN_TOKEN_ID,
-  buildCandidate,
-} from './changeBoxBuilder.mocks';
+} from './testData';
 import * as testData from './testData';
 
 describe('ErgoChangeBoxBuilder', () => {
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should build single change box with string address input
    * @dependencies ergo-lib, testData
    * @scenario
-   * - use a static change address
-   * - leave surplus ERG and tokens after outputs
-   * - build change boxes
+   * - create builder with a static change address
+   * - prepare inputs/outputs so one box has surplus ERG and tokens
+   * - call build and inspect the returned change box
    * @expected
-   * - a single change box is created with expected ERG and token amounts
+   * - changeBoxes contains exactly one entry
+   * - the change box height matches the requested transaction height
+   * - the change box value equals the computed ERG surplus
+   * - the change box tokens contain the surplus amount of TOKEN_ID
    */
   it('should build single change box with string address input', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
@@ -50,16 +53,20 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should build multiple change boxes using address generator and registers
    * @dependencies ergo-lib, testData
    * @scenario
-   * - provide two explicit change asset groups
-   * - use an address generator and register map
-   * - build change boxes
+   * - configure address generator and register map
+   * - pass explicit change asset groups matching two change boxes
+   * - call build and verify each change box properties
    * @expected
-   * - two change boxes built with rotated addresses and copied registers
+   * - changeBoxes contains two entries
+   * - each change box script matches the rotated address
+   * - register R4 is copied to each change box
+   * - ERG and token amounts match the provided changeAssets distribution
    */
-  it('should build multiple change boxes using address generator and registers', () => {
+  it('should build multiple change boxes using address generator', () => {
+    // Step 1: prepare rotating address generator
     const ergoTree = ergoLib.ErgoTree.from_base16_bytes(
       testData.rawBoxes[0].ergoTree,
     );
@@ -75,13 +82,12 @@ describe('ErgoChangeBoxBuilder', () => {
       return current;
     });
 
+    // Step 2: configure inputs, outputs and explicit change assets
     const inputBoxes = testData.ergoBoxes;
     const outputBoxes = [
       buildCandidate(1_000_000_000n, [{ id: TOKEN_ID, value: 250n }]),
       buildCandidate(700_000_000n, [{ id: TOKEN_ID, value: 50n }]),
     ];
-
-    const registerValue = ergoLib.Constant.from_i64(ergoLib.I64.from_str('42'));
 
     const changeAssets: Array<AssetBalance> = [
       {
@@ -94,13 +100,13 @@ describe('ErgoChangeBoxBuilder', () => {
       },
     ];
 
+    // Step 3: build change boxes
     const changeBoxes = builder.build({
       inputBoxes,
       outputBoxes,
       height: HEIGHT,
       fee: FEE,
       changeAssets,
-      registerValues: new Map([[4, registerValue]]),
     });
 
     expect(changeBoxes).toHaveLength(2);
@@ -110,9 +116,6 @@ describe('ErgoChangeBoxBuilder', () => {
         .to_ergo_tree()
         .to_base16_bytes();
       expect(box.ergo_tree().to_base16_bytes()).toBe(expectedTree);
-      expect(box.register_value(4)?.dbg_inner()).toBe(
-        registerValue.dbg_inner(),
-      );
       const tokens = box.tokens();
       expect(tokens.len()).toBe(1);
       const token = tokens.get(0);
@@ -127,14 +130,15 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should derive height from output boxes when not provided
    * @dependencies ergo-lib, testData
    * @scenario
-   * - omit height parameter
-   * - pass outputs with differing creation heights
-   * - build change boxes
+   * - omit height parameter when calling build
+   * - provide outputs with different creation heights
+   * - verify resulting change box height equals maximum output height
    * @expected
-   * - resulting change boxes use the maximum output creation height
+   * - changeBoxes contains one entry
+   * - the change box height equals the highest output creation height
    */
   it('should derive height from output boxes when not provided', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
@@ -160,13 +164,55 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should set provided registers on change boxes
    * @dependencies ergo-lib, testData
    * @scenario
-   * - ensure inputs exactly match outputs
-   * - run builder without explicit change assets
+   * - pass registerValues map when building change boxes
+   * - inspect the returned change boxes
    * @expected
-   * - no change boxes are produced
+   * - each change box contains the provided register values
+   */
+  it('should set provided registers on change boxes', () => {
+    const registerValue = ergoLib.Constant.from_i64(ergoLib.I64.from_str('42'));
+    const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
+    const inputBoxes = testData.ergoBoxes.slice(0, 1);
+    const outputBoxes = [
+      buildCandidate(900_000_000n, [{ id: TOKEN_ID, value: 50n }]),
+    ];
+
+    const changeAssets: Array<AssetBalance> = [
+      {
+        nativeToken: 98_900_000n,
+        tokens: [{ id: TOKEN_ID, value: 150n }],
+      },
+    ];
+
+    const changeBoxes = builder.build({
+      inputBoxes,
+      outputBoxes,
+      height: HEIGHT,
+      fee: FEE,
+      changeAssets,
+      registerValues: new Map([[4, registerValue]]),
+    });
+
+    expect(changeBoxes).toHaveLength(changeAssets.length);
+    changeBoxes.forEach((changeBox) => {
+      expect(changeBox.register_value(4)?.dbg_inner()).toBe(
+        registerValue.dbg_inner(),
+      );
+    });
+  });
+
+  /**
+   * @target ErgoChangeBoxBuilder.build should return no change boxes when inputs exactly match outputs
+   * @dependencies ergo-lib, testData
+   * @scenario
+   * - craft inputs and outputs with identical assets
+   * - call build without changeAssets override
+   * - inspect the returned list
+   * @expected
+   * - changeBoxes is an empty array
    */
   it('should return no change boxes when inputs exactly match outputs', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
@@ -189,13 +235,13 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should throw when outputs exceed inputs including fee
    * @dependencies ergo-lib, testData
    * @scenario
-   * - set outputs to exceed inputs plus fee
-   * - attempt to build change boxes
+   * - configure outputs whose total > inputs + fee
+   * - call build and capture the error
    * @expected
-   * - builder throws explaining outputs exceed inputs
+   * - calling build throws an error explaining outputs exceed inputs
    */
   it('should throw when outputs exceed inputs including fee', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
@@ -216,13 +262,13 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should throw when tokens remain but no erg is left for change
    * @dependencies ergo-lib, testData
    * @scenario
-   * - outputs consume all ERG but leave tokens
-   * - attempt to build change boxes
+   * - choose outputs that consume all ERG while leaving tokens
+   * - call build with zero-fee change
    * @expected
-   * - builder throws because no ERG remains to carry token change
+   * - calling build throws an error because no ERG remains to carry tokens
    */
   it('should throw when tokens remain but no erg is left for change', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
@@ -240,13 +286,13 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should throw when change box has insufficient ERG for tokens
    * @dependencies ergo-lib, testData
    * @scenario
-   * - supply change assets with ERG below wasm-calculated min
-   * - attempt to build change box
+   * - pass custom changeAssets with ERG below wasm min
+   * - invoke build to construct change box
    * @expected
-   * - builder throws with “Not enough ERG” message
+   * - calling build throws an error stating the change box lacks sufficient ERG
    */
   it('should throw when change box has insufficient ERG for tokens', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
@@ -273,13 +319,15 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should allow minted tokens referenced by the first input box id
    * @dependencies ergo-lib, testData
    * @scenario
-   * - outputs include a token minted by this transaction (first input id)
-   * - build change boxes
+   * - include a token with id equal to first input box id (minted token)
+   * - run build and verify no errors occur
+   * - inspect resulting change tokens
    * @expected
-   * - minted token bypasses unknown-token error and change boxes build successfully
+   * - changeBoxes contains one entry
+   * - the minted token id is ignored and only original tokens remain in change
    */
   it('should allow minted tokens referenced by the first input box id', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
@@ -302,13 +350,13 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should throw when outputs contain non-minted unknown tokens
    * @dependencies ergo-lib, testData
    * @scenario
-   * - outputs include a token absent from inputs and not minted
-   * - build change boxes
+   * - add a token id absent from inputs and not minted
+   * - call build expecting failure
    * @expected
-   * - builder throws indicating the unknown token
+   * - calling build throws an error indicating the unknown token in outputs
    */
   it('should throw when outputs contain non-minted unknown tokens', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
@@ -328,16 +376,19 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build
+   * @target ErgoChangeBoxBuilder.build should build change boxes usable in a real unsigned transaction
    * @dependencies ergo-lib, testData
    * @scenario
-   * - build change boxes
-   * - include them with other outputs in a TxBuilder
-   * - (implicitly) rely on register propagation
+   * - generate change boxes
+   * - feed inputs/outputs/change into TxBuilder and build unsigned tx
+   * - verify tx outputs include original outputs followed by change boxes
    * @expected
-   * - unsigned transaction contains matching change outputs
+   * - the unsigned transaction contains all requested outputs followed by change boxes and the fee box
+   * - each planned output matches its counterpart in the transaction
+   * - each change box matches the corresponding transaction output after the planned outputs
    */
   it('should build change boxes usable in a real unsigned transaction', () => {
+    // Step 1: build change boxes for selected inputs/outputs
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
     const inputBoxes = testData.ergoBoxes.slice(0, 2);
     const outputBoxes = [
@@ -353,6 +404,7 @@ describe('ErgoChangeBoxBuilder', () => {
 
     expect(changeBoxes.length).toBeGreaterThan(0);
 
+    // Step 2: prepare TxBuilder inputs/outputs collections
     const ergoBoxes = ergoLib.ErgoBoxes.empty();
     inputBoxes.forEach((box) => ergoBoxes.add(box));
 
@@ -366,6 +418,7 @@ describe('ErgoChangeBoxBuilder', () => {
       new ergoLib.ErgoBoxAssetsDataList(),
     );
 
+    // Step 3: build unsigned transaction and verify outputs
     const txBuilder = ergoLib.TxBuilder.new(
       boxSelection,
       candidates,
@@ -377,27 +430,41 @@ describe('ErgoChangeBoxBuilder', () => {
     const unsignedTx = txBuilder.build();
 
     const builtOutputs = unsignedTx.output_candidates();
-    const matchedIndices = new Set<number>();
-    for (let i = 0; i < builtOutputs.len(); i++) {
-      const candidate = builtOutputs.get(i);
-      changeBoxes.forEach((changeBox, idx) => {
-        const sameTree =
-          candidate.ergo_tree().to_base16_bytes() ===
-          changeBox.ergo_tree().to_base16_bytes();
-        const sameValue =
-          candidate.value().as_i64().to_str() ===
-          changeBox.value().as_i64().to_str();
-        const candidateTokens = candidate.tokens();
-        const changeTokens = changeBox.tokens();
-        const sameTokens =
-          candidateTokens.len() === changeTokens.len() &&
-          (candidateTokens.len() === 0 ||
-            candidateTokens.get(0).amount().as_i64().to_str() ===
-              changeTokens.get(0).amount().as_i64().to_str());
-        if (sameTree && sameValue && sameTokens) matchedIndices.add(idx);
-      });
-    }
+    expect(builtOutputs.len()).toBe(
+      outputBoxes.length + changeBoxes.length + 1,
+    );
 
-    expect(matchedIndices.size).toBe(changeBoxes.length);
+    /**
+     * Compares two box candidates and asserts their tree, value and tokens match.
+     */
+    const assertEqual = (
+      actual: ergoLib.ErgoBoxCandidate,
+      expected: ergoLib.ErgoBoxCandidate,
+    ) => {
+      expect(actual.ergo_tree().to_base16_bytes()).toBe(
+        expected.ergo_tree().to_base16_bytes(),
+      );
+      expect(actual.value().as_i64().to_str()).toBe(
+        expected.value().as_i64().to_str(),
+      );
+      const actualTokens = actual.tokens();
+      const expectedTokens = expected.tokens();
+      expect(actualTokens.len()).toBe(expectedTokens.len());
+      for (let i = 0; i < actualTokens.len(); i++) {
+        expect(actualTokens.get(i).id().to_str()).toBe(
+          expectedTokens.get(i).id().to_str(),
+        );
+        expect(actualTokens.get(i).amount().as_i64().to_str()).toBe(
+          expectedTokens.get(i).amount().as_i64().to_str(),
+        );
+      }
+    };
+
+    outputBoxes.forEach((expected, idx) => {
+      assertEqual(builtOutputs.get(idx), expected);
+    });
+    changeBoxes.forEach((expected, idx) => {
+      assertEqual(builtOutputs.get(outputBoxes.length + idx), expected);
+    });
   });
 });

@@ -6,7 +6,7 @@ import {
   BuildChangeBoxesParams,
   ChangeAddressInput,
   RegisterValuesInput,
-} from './changeBoxBuilder.types';
+} from './types';
 
 export class ErgoChangeBoxBuilder {
   private readonly changeAddressProvider: () => string;

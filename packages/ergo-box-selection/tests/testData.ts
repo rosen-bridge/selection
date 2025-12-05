@@ -74,3 +74,12 @@ export const box0Info: BoxInfo = {
     ],
   },
 };
+
+export const CHANGE_ADDRESS =
+  '9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA';
+export const HEIGHT = 1400000;
+export const FEE = 1100000n;
+export const TOKEN_ID = rawBoxes[0].assets[0].tokenId;
+export const UNKNOWN_TOKEN_ID =
+  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+export const MINTED_TOKEN_ID = rawBoxes[0].boxId;
