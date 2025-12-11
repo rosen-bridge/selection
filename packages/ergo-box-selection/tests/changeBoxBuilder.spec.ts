@@ -315,7 +315,7 @@ describe('ErgoChangeBoxBuilder', () => {
         fee: 0n,
         changeAssets,
       }),
-    ).toThrow(/Not enough ERG.*minimum required/);
+    ).toThrow(/Not enough ERG/);
   });
 
   /**

@@ -363,31 +363,17 @@ export class ErgoChangeBoxBuilder {
       builder.set_register_value(id, value);
     });
 
-    const minBoxValue = this.calculateMinBoxValue(builder, boxValue);
-    if (assets.nativeToken < minBoxValue) {
+    try {
+      builder.calc_min_box_value();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'box value below minimum';
       throw new Error(
-        `Not enough ERG (${assets.nativeToken}) for change box #${index + 1}; minimum required is ${minBoxValue}`,
+        `Not enough ERG (${assets.nativeToken}) for change box #${index + 1}; ${message}`,
       );
     }
 
     return builder.build();
-  };
-
-  /**
-   * Temporarily adjusts builder value to fetch WASM-calculated minimal box value.
-   * @param builder box candidate builder
-   * @param originalValue requested box value
-   * @returns minimal nanoERG amount to satisfy size requirements
-   */
-  private calculateMinBoxValue = (
-    builder: ergoLib.ErgoBoxCandidateBuilder,
-    originalValue: ergoLib.BoxValue,
-  ): bigint => {
-    const safeValue = ergoLib.BoxValue.SAFE_USER_MIN();
-    builder.set_value(safeValue);
-    const minValue = BigInt(builder.calc_min_box_value().as_i64().to_str());
-    builder.set_value(originalValue);
-    return minValue;
   };
 
   /**
