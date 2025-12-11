@@ -53,16 +53,15 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build should build multiple change boxes using address generator and registers
+   * @target ErgoChangeBoxBuilder.build should build multiple change boxes using address generator
    * @dependencies ergo-lib, testData
    * @scenario
-   * - configure address generator and register map
+   * - configure address generator
    * - pass explicit change asset groups matching two change boxes
    * - call build and verify each change box properties
    * @expected
    * - changeBoxes contains two entries
    * - each change box script matches the rotated address
-   * - register R4 is copied to each change box
    * - ERG and token amounts match the provided changeAssets distribution
    */
   it('should build multiple change boxes using address generator', () => {
