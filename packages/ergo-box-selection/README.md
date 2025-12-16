@@ -122,4 +122,6 @@ const changeBoxes = changeBuilder.build({
 });
 ```
 
-Pass `registerValues` (a `Map` or plain object keyed by register id) to apply the same register content to every produced change box.
+Pass `registerValues` (array of `Constant`, ordered as R4, R5, ... R9) to apply the same register content to every produced change box.
+
+Pass `burnTokens` (a `Map<string, bigint>` from tokenId to burnAmount) to allow burning tokens by reducing the computed token change amounts.

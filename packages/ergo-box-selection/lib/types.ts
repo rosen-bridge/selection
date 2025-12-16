@@ -4,15 +4,21 @@ import { AssetBalance } from '@rosen-bridge/selection-types';
 
 export type ChangeAddressInput = string | (() => string);
 
-export type RegisterValuesInput =
-  | Map<number, ergoLib.Constant>
-  | Partial<Record<number, ergoLib.Constant>>;
+export type RegisterValues = Array<ergoLib.Constant>;
+
+export type TokenAmountMap = Map<string, bigint>;
+
+export interface AggregatedAssets {
+  native: bigint;
+  tokens: TokenAmountMap;
+}
 
 export interface BuildChangeBoxesParams {
   inputBoxes: Array<ergoLib.ErgoBox>;
   outputBoxes: Array<ergoLib.ErgoBoxCandidate>;
   height?: number;
-  fee?: bigint | number | string;
+  fee?: bigint;
   changeAssets?: Array<AssetBalance>;
-  registerValues?: RegisterValuesInput;
+  registerValues?: RegisterValues;
+  burnTokens?: TokenAmountMap;
 }

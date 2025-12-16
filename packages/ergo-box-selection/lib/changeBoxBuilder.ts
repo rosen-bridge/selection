@@ -3,9 +3,11 @@ import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import { AssetBalance, TokenInfo } from '@rosen-bridge/selection-types';
 
 import {
+  AggregatedAssets,
   BuildChangeBoxesParams,
   ChangeAddressInput,
-  RegisterValuesInput,
+  RegisterValues,
+  TokenAmountMap,
 } from './types';
 
 export class ErgoChangeBoxBuilder {
@@ -27,8 +29,15 @@ export class ErgoChangeBoxBuilder {
    * @returns list of ErgoBox candidates representing the change boxes
    */
   build = (params: BuildChangeBoxesParams): Array<ergoLib.ErgoBoxCandidate> => {
-    const { inputBoxes, outputBoxes, height, changeAssets, registerValues } =
-      params;
+    const {
+      inputBoxes,
+      outputBoxes,
+      height,
+      changeAssets,
+      registerValues,
+      burnTokens,
+    } = params;
+    params;
 
     if (!inputBoxes.length) {
       throw new Error(
@@ -45,11 +54,11 @@ export class ErgoChangeBoxBuilder {
       throw new Error('Height must be a positive integer');
     }
 
-    const fee = this.normalizeFee(params.fee);
+    const fee = params.fee ?? 0n;
     const { native: totalInputNative, tokens: inputTokens } =
-      this.aggregateBoxAssets(inputBoxes);
+      this.aggregateAssets(inputBoxes);
     const { native: totalOutputNative, tokens: outputTokens } =
-      this.aggregateCandidateAssets(outputBoxes);
+      this.aggregateAssets(outputBoxes);
 
     if (totalOutputNative + fee > totalInputNative) {
       throw new Error(
@@ -59,11 +68,12 @@ export class ErgoChangeBoxBuilder {
 
     const changeNative = totalInputNative - totalOutputNative - fee;
     const firstInputBoxId = inputBoxes[0].box_id().to_str();
-    const changeTokens = this.calculateChangeTokens(
+    let changeTokens = this.calculateChangeTokens(
       inputTokens,
       outputTokens,
       firstInputBoxId,
     );
+    changeTokens = this.applyBurnTokens(changeTokens, burnTokens);
 
     if (changeNative === 0n && changeTokens.size === 0) {
       return [];
@@ -80,10 +90,9 @@ export class ErgoChangeBoxBuilder {
       changeTokens,
       changeAssets,
     );
-    const registerEntries = this.normalizeRegisterEntries(registerValues);
 
     return finalChangeAssets.map((assets, index) =>
-      this.buildChangeBox(assets, resolvedHeight, registerEntries, index),
+      this.buildChangeBox(assets, resolvedHeight, registerValues ?? [], index),
     );
   };
 
@@ -109,46 +118,21 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Aggregates native/token assets from the given Ergo boxes.
-   * @param boxes selected input boxes
+   * Aggregates native/token assets from a list of ergo boxes or candidates.
+   * @param items input boxes or output candidates
    * @returns aggregated native token total and a token map
    */
-  private aggregateBoxAssets = (
-    boxes: Array<ergoLib.ErgoBox>,
-  ): { native: bigint; tokens: Map<string, bigint> } => {
+  private aggregateAssets = (
+    items: Array<ergoLib.ErgoBox | ergoLib.ErgoBoxCandidate>,
+  ): AggregatedAssets => {
     let native = 0n;
     const tokens = new Map<string, bigint>();
 
-    boxes.forEach((box) => {
-      native += BigInt(box.value().as_i64().to_str());
-      const boxTokens = box.tokens();
-      for (let i = 0; i < boxTokens.len(); i++) {
-        const token = boxTokens.get(i);
-        const id = token.id().to_str();
-        const amount = BigInt(token.amount().as_i64().to_str());
-        tokens.set(id, (tokens.get(id) ?? 0n) + amount);
-      }
-    });
-
-    return { native, tokens };
-  };
-
-  /**
-   * Aggregates native/token assets from the provided output candidates.
-   * @param candidates desired transaction outputs
-   * @returns aggregated native token total and a token map
-   */
-  private aggregateCandidateAssets = (
-    candidates: Array<ergoLib.ErgoBoxCandidate>,
-  ): { native: bigint; tokens: Map<string, bigint> } => {
-    let native = 0n;
-    const tokens = new Map<string, bigint>();
-
-    candidates.forEach((candidate) => {
-      native += BigInt(candidate.value().as_i64().to_str());
-      const candidateTokens = candidate.tokens();
-      for (let i = 0; i < candidateTokens.len(); i++) {
-        const token = candidateTokens.get(i);
+    items.forEach((item) => {
+      native += BigInt(item.value().as_i64().to_str());
+      const itemTokens = item.tokens();
+      for (let i = 0; i < itemTokens.len(); i++) {
+        const token = itemTokens.get(i);
         const id = token.id().to_str();
         const amount = BigInt(token.amount().as_i64().to_str());
         tokens.set(id, (tokens.get(id) ?? 0n) + amount);
@@ -194,6 +178,34 @@ export class ErgoChangeBoxBuilder {
     });
 
     return changeTokens;
+  };
+
+  /**
+   * Applies token burns by reducing the computed token change amounts.
+   * @param changeTokens computed token change amounts
+   * @param burnTokens token id to burn amount map
+   * @returns updated change token map
+   */
+  private applyBurnTokens = (
+    changeTokens: Map<string, bigint>,
+    burnTokens?: TokenAmountMap,
+  ): Map<string, bigint> => {
+    if (!burnTokens) return changeTokens;
+    const updated = new Map(changeTokens);
+
+    burnTokens.forEach((burnAmount, id) => {
+      const available = updated.get(id) ?? 0n;
+      const remaining = available - burnAmount;
+      if (remaining < 0n) {
+        throw new Error(
+          `Burn amount for token [${id}] exceeds remaining change tokens`,
+        );
+      }
+      if (remaining === 0n) updated.delete(id);
+      else updated.set(id, remaining);
+    });
+
+    return updated;
   };
 
   /**
@@ -323,7 +335,7 @@ export class ErgoChangeBoxBuilder {
   private buildChangeBox = (
     assets: AssetBalance,
     height: number,
-    registerEntries: Array<[number, ergoLib.Constant]>,
+    registerValues: RegisterValues,
     index: number,
   ): ergoLib.ErgoBoxCandidate => {
     if (assets.tokens.some((token) => token.value <= 0n)) {
@@ -359,8 +371,8 @@ export class ErgoChangeBoxBuilder {
       );
     });
 
-    registerEntries.forEach(([id, value]) => {
-      builder.set_register_value(id, value);
+    registerValues.forEach((value, i) => {
+      builder.set_register_value(ergoLib.NonMandatoryRegisterId.R4 + i, value);
     });
 
     try {
@@ -377,55 +389,6 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-   * Normalizes register entries to tuples and validates register ids.
-   * @param registerValues map/object describing R4-R9 contents
-   * @returns normalized list of register entries
-   */
-  private normalizeRegisterEntries = (
-    registerValues?: RegisterValuesInput,
-  ): Array<[number, ergoLib.Constant]> => {
-    if (!registerValues) return [];
-
-    const entries: Array<[number, ergoLib.Constant]> =
-      registerValues instanceof Map
-        ? Array.from(registerValues.entries())
-        : (
-            Object.entries(registerValues) as Array<[string, ergoLib.Constant]>
-          ).map(([key, value]) => [Number(key), value]);
-
-    return entries.map(([id, value]) => {
-      if (!Number.isInteger(id)) {
-        throw new Error(`Register id must be an integer, received ${id}`);
-      }
-      if (
-        id < ergoLib.NonMandatoryRegisterId.R4 ||
-        id > ergoLib.NonMandatoryRegisterId.R9
-      ) {
-        throw new Error(`Register id ${id} is out of supported range (R4-R9)`);
-      }
-      if (!value) {
-        throw new Error(`Value for register ${id} is missing`);
-      }
-      return [id, value];
-    });
-  };
-
-  /**
-   * Normalizes fee input to bigint.
-   * @param fee optional numeric, bigint or string fee
-   * @returns fee as bigint
-   */
-  private normalizeFee = (fee?: bigint | number | string): bigint => {
-    if (fee === undefined) return 0n;
-    if (typeof fee === 'bigint') return fee;
-    if (typeof fee === 'number') {
-      if (!Number.isFinite(fee) || !Number.isInteger(fee)) {
-        throw new Error('Fee must be a finite integer');
-      }
-      return BigInt(fee);
-    }
-    return BigInt(fee);
-  };
 
   /**
    * Resolves change address string to an Ergo address instance.

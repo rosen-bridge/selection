@@ -192,7 +192,7 @@ describe('ErgoChangeBoxBuilder', () => {
       height: HEIGHT,
       fee: FEE,
       changeAssets,
-      registerValues: new Map([[4, registerValue]]),
+      registerValues: [registerValue],
     });
 
     expect(changeBoxes).toHaveLength(changeAssets.length);
@@ -372,6 +372,145 @@ describe('ErgoChangeBoxBuilder', () => {
         fee: 0n,
       }),
     ).toThrow(/Token \[/);
+  });
+
+  /**
+   * @target ErgoChangeBoxBuilder.build should reduce change tokens by burnTokens
+   * @dependencies ergo-lib, testData
+   * @scenario
+   * - provide burnTokens for a token that exists in computed change
+   * - build change boxes
+   * @expected
+   * - change token amount is reduced by burn amount
+   */
+  it('should reduce change tokens by burnTokens', () => {
+    const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
+    const inputBoxes = testData.ergoBoxes.slice(0, 1);
+    const outputBoxes = [
+      buildCandidate(900_000_000n, [{ id: TOKEN_ID, value: 50n }]),
+    ];
+
+    const changeBoxes = builder.build({
+      inputBoxes,
+      outputBoxes,
+      height: HEIGHT,
+      fee: FEE,
+      burnTokens: new Map([[TOKEN_ID, 10n]]),
+    });
+
+    expect(changeBoxes).toHaveLength(1);
+    const token = changeBoxes[0].tokens().get(0);
+    expect(token.id().to_str()).toBe(TOKEN_ID);
+    expect(token.amount().as_i64().to_str()).toBe('140');
+  });
+
+  /**
+   * @target ErgoChangeBoxBuilder.build should throw when burnTokens exceeds remaining change
+   * @dependencies ergo-lib, testData
+   * @scenario
+   * - provide burnTokens greater than computed change for a token
+   * - call build
+   * @expected
+   * - build throws an error
+   */
+  it('should throw when burnTokens exceeds remaining change', () => {
+    const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
+    const inputBoxes = testData.ergoBoxes.slice(0, 1);
+    const outputBoxes = [
+      buildCandidate(900_000_000n, [{ id: TOKEN_ID, value: 50n }]),
+    ];
+
+    expect(() =>
+      builder.build({
+        inputBoxes,
+        outputBoxes,
+        height: HEIGHT,
+        fee: FEE,
+        burnTokens: new Map([[TOKEN_ID, 1000n]]),
+      }),
+    ).toThrow(/Burn amount/);
+  });
+
+  /**
+   * @target ErgoChangeBoxBuilder.build should remove tokens when burn makes change exactly zero
+   * @dependencies ergo-lib, testData
+   * @scenario
+   * - provide burnTokens equal to the computed change amount for a token
+   * - build change boxes
+   * @expected
+   * - the fully burned token is not included in the change box
+   */
+  it('should remove tokens when burn makes change exactly zero', () => {
+    const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
+    const inputBoxes = testData.ergoBoxes.slice(0, 1);
+    const outputBoxes = [
+      buildCandidate(900_000_000n, [{ id: TOKEN_ID, value: 50n }]),
+    ];
+
+    const changeBoxes = builder.build({
+      inputBoxes,
+      outputBoxes,
+      height: HEIGHT,
+      fee: FEE,
+      burnTokens: new Map([[TOKEN_ID, 150n]]),
+    });
+
+    expect(changeBoxes).toHaveLength(1);
+    expect(changeBoxes[0].tokens().len()).toBe(0);
+  });
+
+  /**
+   * @target ErgoChangeBoxBuilder.build should reduce change tokens by multiple burn tokens
+   * @dependencies ergo-lib, testData
+   * @scenario
+   * - provide burnTokens for multiple token ids
+   * - build change boxes
+   * @expected
+   * - each burned token amount is reduced from change output
+   */
+  it('should reduce change tokens by multiple burn tokens', () => {
+    const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
+    const otherTokenId =
+      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const inputCandidate = buildCandidate(BigInt(testData.rawBoxes[0].value), [
+      { id: TOKEN_ID, value: 200n },
+      { id: otherTokenId, value: 100n },
+    ]);
+    const inputBoxes = [
+      ergoLib.ErgoBox.from_box_candidate(
+        inputCandidate,
+        ergoLib.TxId.zero(),
+        0,
+      ),
+    ];
+    const outputBoxes = [
+      buildCandidate(900_000_000n, [
+        { id: TOKEN_ID, value: 50n },
+        { id: otherTokenId, value: 10n },
+      ]),
+    ];
+
+    const changeBoxes = builder.build({
+      inputBoxes,
+      outputBoxes,
+      height: HEIGHT,
+      fee: FEE,
+      burnTokens: new Map([
+        [TOKEN_ID, 10n],
+        [otherTokenId, 5n],
+      ]),
+    });
+
+    expect(changeBoxes).toHaveLength(1);
+    const changeTokens = changeBoxes[0].tokens();
+    expect(changeTokens.len()).toBe(2);
+    const tokenMap = new Map<string, string>();
+    for (let i = 0; i < changeTokens.len(); i++) {
+      const token = changeTokens.get(i);
+      tokenMap.set(token.id().to_str(), token.amount().as_i64().to_str());
+    }
+    expect(tokenMap.get(TOKEN_ID)).toBe('140');
+    expect(tokenMap.get(otherTokenId)).toBe('85');
   });
 
   /**
