@@ -3,11 +3,9 @@ import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import { AssetBalance, TokenInfo } from '@rosen-bridge/selection-types';
 
 import {
-  AggregatedAssets,
   BuildChangeBoxesParams,
   ChangeAddressInput,
   RegisterValues,
-  TokenAmountMap,
 } from './types';
 
 export class ErgoChangeBoxBuilder {
@@ -37,27 +35,37 @@ export class ErgoChangeBoxBuilder {
       registerValues,
       burnTokens,
     } = params;
-    params;
 
-    if (!inputBoxes.length) {
+    if (!Number.isInteger(height) || height <= 0) {
+      throw new Error('Height must be a positive integer');
+    }
+
+    if (changeAssets) {
+      if (burnTokens) {
+        throw new Error(
+          'burnTokens can only be used when changeAssets is not provided',
+        );
+      }
+      return changeAssets.map((assets, index) =>
+        this.buildChangeBox(assets, height, registerValues ?? [], index),
+      );
+    }
+
+    if (!inputBoxes?.length) {
       throw new Error(
         'At least one input box is required to build change boxes',
       );
     }
-    if (!outputBoxes.length) {
+    if (!outputBoxes?.length) {
       throw new Error(
         'At least one output box candidate is required to build change boxes',
       );
     }
-    const resolvedHeight = height ?? this.deriveHeightFromOutputs(outputBoxes);
-    if (!Number.isInteger(resolvedHeight) || resolvedHeight <= 0) {
-      throw new Error('Height must be a positive integer');
-    }
 
     const fee = params.fee ?? 0n;
-    const { native: totalInputNative, tokens: inputTokens } =
+    const { nativeToken: totalInputNative, tokens: inputTokens } =
       this.aggregateAssets(inputBoxes);
-    const { native: totalOutputNative, tokens: outputTokens } =
+    const { nativeToken: totalOutputNative, tokens: outputTokens } =
       this.aggregateAssets(outputBoxes);
 
     if (totalOutputNative + fee > totalInputNative) {
@@ -75,46 +83,25 @@ export class ErgoChangeBoxBuilder {
     );
     changeTokens = this.applyBurnTokens(changeTokens, burnTokens);
 
-    if (changeNative === 0n && changeTokens.size === 0) {
+    if (changeNative === 0n && changeTokens.length === 0) {
       return [];
     }
 
-    if (changeTokens.size > 0 && changeNative <= 0n) {
+    if (changeTokens.length > 0 && changeNative <= 0n) {
+      const changeTokenIds = changeTokens.map((token) => token.id).join(', ');
       throw new Error(
-        `Remaining tokens ${changeTokens.toString()} require a change box but no ERG is left after accounting for outputs and fee`,
+        `Remaining tokens [${changeTokenIds}] require a change box but no ERG is left after accounting for outputs and fee`,
       );
     }
 
-    const finalChangeAssets = this.prepareChangeAssetGroups(
+    const finalChangeAssets = this.buildDefaultChangeAssets(
       changeNative,
       changeTokens,
-      changeAssets,
     );
 
     return finalChangeAssets.map((assets, index) =>
-      this.buildChangeBox(assets, resolvedHeight, registerValues ?? [], index),
+      this.buildChangeBox(assets, height, registerValues ?? [], index),
     );
-  };
-
-  /**
-   * Derives the box creation height from output candidates when height is not provided.
-   * @param outputBoxes transaction outputs
-   * @returns maximum creation height across outputs
-   */
-  private deriveHeightFromOutputs = (
-    outputBoxes: Array<ergoLib.ErgoBoxCandidate>,
-  ): number => {
-    let maxHeight = 0;
-    outputBoxes.forEach((candidate) => {
-      const candidateHeight = candidate.creation_height();
-      if (candidateHeight > maxHeight) maxHeight = candidateHeight;
-    });
-
-    if (maxHeight <= 0) {
-      throw new Error('Unable to determine height from output box candidates');
-    }
-
-    return maxHeight;
   };
 
   /**
@@ -124,22 +111,25 @@ export class ErgoChangeBoxBuilder {
    */
   private aggregateAssets = (
     items: Array<ergoLib.ErgoBox | ergoLib.ErgoBoxCandidate>,
-  ): AggregatedAssets => {
-    let native = 0n;
-    const tokens = new Map<string, bigint>();
+  ): AssetBalance => {
+    let nativeToken = 0n;
+    const tokenMap = new Map<string, bigint>();
 
     items.forEach((item) => {
-      native += BigInt(item.value().as_i64().to_str());
+      nativeToken += BigInt(item.value().as_i64().to_str());
       const itemTokens = item.tokens();
       for (let i = 0; i < itemTokens.len(); i++) {
         const token = itemTokens.get(i);
         const id = token.id().to_str();
         const amount = BigInt(token.amount().as_i64().to_str());
-        tokens.set(id, (tokens.get(id) ?? 0n) + amount);
+        tokenMap.set(id, (tokenMap.get(id) ?? 0n) + amount);
       }
     });
 
-    return { native, tokens };
+    return {
+      nativeToken,
+      tokens: this.fromTokenMap(tokenMap),
+    };
   };
 
   /**
@@ -150,13 +140,14 @@ export class ErgoChangeBoxBuilder {
    * @returns tokens that should be returned as change
    */
   private calculateChangeTokens = (
-    inputTokens: Map<string, bigint>,
-    outputTokens: Map<string, bigint>,
+    inputTokens: Array<TokenInfo>,
+    outputTokens: Array<TokenInfo>,
     mintedTokenId?: string,
-  ): Map<string, bigint> => {
-    const changeTokens = new Map(inputTokens);
+  ): Array<TokenInfo> => {
+    const changeTokens = this.toTokenMap(inputTokens);
+    const outputTokenMap = this.toTokenMap(outputTokens);
 
-    outputTokens.forEach((amount, id) => {
+    outputTokenMap.forEach((amount, id) => {
       if (!changeTokens.has(id)) {
         if (mintedTokenId && id === mintedTokenId) {
           return;
@@ -177,7 +168,7 @@ export class ErgoChangeBoxBuilder {
       }
     });
 
-    return changeTokens;
+    return this.fromTokenMap(changeTokens);
   };
 
   /**
@@ -187,13 +178,14 @@ export class ErgoChangeBoxBuilder {
    * @returns updated change token map
    */
   private applyBurnTokens = (
-    changeTokens: Map<string, bigint>,
-    burnTokens?: TokenAmountMap,
-  ): Map<string, bigint> => {
+    changeTokens: Array<TokenInfo>,
+    burnTokens?: Array<TokenInfo>,
+  ): Array<TokenInfo> => {
     if (!burnTokens) return changeTokens;
-    const updated = new Map(changeTokens);
+    const updated = this.toTokenMap(changeTokens);
+    const burnTokenMap = this.toTokenMap(burnTokens);
 
-    burnTokens.forEach((burnAmount, id) => {
+    burnTokenMap.forEach((burnAmount, id) => {
       const available = updated.get(id) ?? 0n;
       const remaining = available - burnAmount;
       if (remaining < 0n) {
@@ -205,27 +197,7 @@ export class ErgoChangeBoxBuilder {
       else updated.set(id, remaining);
     });
 
-    return updated;
-  };
-
-  /**
-   * Determines the final change asset groups to build boxes from.
-   * @param changeNative remaining native token amount
-   * @param changeTokens remaining tokens
-   * @param providedAssets optional explicit change distribution
-   * @returns array of change asset balances
-   */
-  private prepareChangeAssetGroups = (
-    changeNative: bigint,
-    changeTokens: Map<string, bigint>,
-    providedAssets?: Array<AssetBalance>,
-  ): Array<AssetBalance> => {
-    if (!providedAssets || providedAssets.length === 0) {
-      return this.buildDefaultChangeAssets(changeNative, changeTokens);
-    }
-
-    this.validateChangeAssetGroups(changeNative, changeTokens, providedAssets);
-    return providedAssets;
+    return this.fromTokenMap(updated);
   };
 
   /**
@@ -236,15 +208,15 @@ export class ErgoChangeBoxBuilder {
    */
   private buildDefaultChangeAssets = (
     changeNative: bigint,
-    changeTokens: Map<string, bigint>,
+    changeTokens: Array<TokenInfo>,
   ): Array<AssetBalance> => {
-    if (changeNative === 0n && changeTokens.size === 0) {
+    if (changeNative === 0n && changeTokens.length === 0) {
       return [];
     }
 
     // minChangeBoxValue will be validated when building the actual box
 
-    if (changeNative <= 0n && changeTokens.size > 0) {
+    if (changeNative <= 0n && changeTokens.length > 0) {
       throw new Error(
         'Change tokens detected but no ERG available to hold them in a change box',
       );
@@ -254,74 +226,12 @@ export class ErgoChangeBoxBuilder {
       return [];
     }
 
-    const tokens: Array<TokenInfo> = Array.from(changeTokens.entries()).map(
-      ([id, value]) => ({
-        id,
-        value,
-      }),
-    );
-
     return [
       {
         nativeToken: changeNative,
-        tokens,
+        tokens: changeTokens,
       },
     ];
-  };
-
-  /**
-   * Validates that provided change assets align with computed surplus.
-   * @param changeNative remaining native token amount
-   * @param changeTokens remaining tokens
-   * @param groups caller-provided change asset groups
-   */
-  private validateChangeAssetGroups = (
-    changeNative: bigint,
-    changeTokens: Map<string, bigint>,
-    groups: Array<AssetBalance>,
-  ) => {
-    let aggregatedNative = 0n;
-    const remainingTokens = new Map(changeTokens);
-
-    groups.forEach((group, index) => {
-      if (group.nativeToken < 0n) {
-        throw new Error(
-          `Negative ERG amount specified for change box #${index + 1}`,
-        );
-      }
-      aggregatedNative += group.nativeToken;
-
-      group.tokens.forEach((token) => {
-        const available = remainingTokens.get(token.id) ?? 0n;
-        const newAmount = available - token.value;
-        if (newAmount < 0n) {
-          throw new Error(
-            `Provided change tokens exceed available amount for token [${token.id}]`,
-          );
-        } else if (newAmount === 0n) {
-          remainingTokens.delete(token.id);
-        } else {
-          remainingTokens.set(token.id, newAmount);
-        }
-      });
-    });
-
-    if (aggregatedNative !== changeNative) {
-      throw new Error(
-        `Sum of provided change ERG (${aggregatedNative}) does not match calculated change (${changeNative})`,
-      );
-    }
-    if (remainingTokens.size > 0) {
-      const missingTokens = Array.from(remainingTokens.entries())
-        .filter(([, amount]) => amount > 0n)
-        .map(([id]) => id)
-        .join(', ');
-      if (missingTokens.length > 0) {
-        throw new Error(
-          `Provided change assets do not cover remaining tokens: ${missingTokens}`,
-        );
-      }
-    }
   };
 
   /**
@@ -389,8 +299,6 @@ export class ErgoChangeBoxBuilder {
   };
 
   /**
-
-  /**
    * Resolves change address string to an Ergo address instance.
    * @param address base58 change address
    * @returns ergo-lib address instance
@@ -406,4 +314,16 @@ export class ErgoChangeBoxBuilder {
       );
     }
   };
+
+  private toTokenMap = (tokens: Array<TokenInfo>): Map<string, bigint> => {
+    const map = new Map<string, bigint>();
+    tokens.forEach((token) => {
+      map.set(token.id, (map.get(token.id) ?? 0n) + token.value);
+    });
+
+    return map;
+  };
+
+  private fromTokenMap = (map: Map<string, bigint>): Array<TokenInfo> =>
+    Array.from(map.entries()).map(([id, value]) => ({ id, value }));
 }

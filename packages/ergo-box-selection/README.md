@@ -114,9 +114,9 @@ const changeBuilder = new ErgoChangeBoxBuilder(
 );
 
 const changeBoxes = changeBuilder.build({
+  height,
   inputBoxes: covering.boxes,
   outputBoxes, // array of ErgoBoxCandidate representing planned outputs
-  // omit height to reuse the max creation height among output candidates
   fee: covering.additionalAssets.fee,
   changeAssets: covering.additionalAssets.list,
 });
@@ -124,4 +124,4 @@ const changeBoxes = changeBuilder.build({
 
 Pass `registerValues` (array of `Constant`, ordered as R4, R5, ... R9) to apply the same register content to every produced change box.
 
-Pass `burnTokens` (a `Map<string, bigint>` from tokenId to burnAmount) to allow burning tokens by reducing the computed token change amounts.
+Pass `burnTokens` (an array of `{ id, value }` token entries) to allow burning tokens by reducing the computed token change amounts.

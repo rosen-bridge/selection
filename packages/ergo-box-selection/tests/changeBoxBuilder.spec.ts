@@ -129,44 +129,160 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build should derive height from output boxes when not provided
-   * @dependencies ergo-lib, testData
+   * @target ErgoChangeBoxBuilder.build should preserve token order in provided changeAssets
+   * @dependencies ergo-lib, changeBoxBuilder.mocks
    * @scenario
-   * - omit height parameter when calling build
-   * - provide outputs with different creation heights
-   * - verify resulting change box height equals maximum output height
+   * - create input box with two token ids
+   * - create output box consuming some of each token and ERG
+   * - provide changeAssets with tokens in a deliberate non-sorted order
+   * - build change boxes
    * @expected
-   * - changeBoxes contains one entry
-   * - the change box height equals the highest output creation height
+   * - change box tokens appear in the same order as provided changeAssets
    */
-  it('should derive height from output boxes when not provided', () => {
+  it('should preserve token order in provided changeAssets', () => {
     const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
-    const inputBoxes = testData.ergoBoxes.slice(0, 2);
-    const outputBoxes = [
-      buildCandidate(
-        1_050_000_000n,
-        [{ id: TOKEN_ID, value: 180n }],
-        CHANGE_ADDRESS,
-        1_450_000,
+    const otherTokenId =
+      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
+    const inputCandidate = buildCandidate(1_200_000_000n, [
+      { id: TOKEN_ID, value: 200n },
+      { id: otherTokenId, value: 100n },
+    ]);
+    const inputBoxes = [
+      ergoLib.ErgoBox.from_box_candidate(
+        inputCandidate,
+        ergoLib.TxId.zero(),
+        0,
       ),
-      buildCandidate(50_000_000n, [], CHANGE_ADDRESS, 1_470_000),
+    ];
+    const outputBoxes = [
+      buildCandidate(900_000_000n, [
+        { id: TOKEN_ID, value: 50n },
+        { id: otherTokenId, value: 10n },
+      ]),
+    ];
+
+    const expectedNativeChange = 1_200_000_000n - 900_000_000n - FEE;
+    const changeAssets: Array<AssetBalance> = [
+      {
+        nativeToken: expectedNativeChange,
+        tokens: [
+          { id: otherTokenId, value: 90n },
+          { id: TOKEN_ID, value: 150n },
+        ],
+      },
     ];
 
     const changeBoxes = builder.build({
       inputBoxes,
       outputBoxes,
+      height: HEIGHT,
       fee: FEE,
+      changeAssets,
     });
 
     expect(changeBoxes).toHaveLength(1);
-    expect(changeBoxes[0].creation_height()).toBe(1_470_000);
+    const changeTokens = changeBoxes[0].tokens();
+    expect(changeTokens.len()).toBe(2);
+    expect(changeTokens.get(0).id().to_str()).toBe(otherTokenId);
+    expect(changeTokens.get(0).amount().as_i64().to_str()).toBe('90');
+    expect(changeTokens.get(1).id().to_str()).toBe(TOKEN_ID);
+    expect(changeTokens.get(1).amount().as_i64().to_str()).toBe('150');
+  });
+
+  /**
+   * @target ErgoChangeBoxBuilder.build should require height
+   * @dependencies ergo-lib, testData
+   * @scenario
+   * - call build without height
+   * @expected
+   * - build throws an error
+   */
+  it('should throw when height is not provided', () => {
+    const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
+    const inputBoxes = testData.ergoBoxes.slice(0, 2);
+    const outputBoxes = [
+      buildCandidate(1_050_000_000n, [{ id: TOKEN_ID, value: 180n }]),
+    ];
+
+    expect(() =>
+      builder.build({
+        inputBoxes,
+        outputBoxes,
+        fee: FEE,
+      } as never),
+    ).toThrow(/Height must be a positive integer/);
+  });
+
+  /**
+   * @target ErgoChangeBoxBuilder.build should not validate provided changeAssets
+   * @dependencies ergo-lib, changeBoxBuilder.mocks
+   * @scenario
+   * - provide changeAssets that do not match the computed change of inputs/outputs
+   * - build change boxes
+   * @expected
+   * - builder returns change boxes matching provided changeAssets
+   */
+  it('should not validate provided changeAssets', () => {
+    const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
+    const inputBoxes = testData.ergoBoxes.slice(0, 1);
+    const outputBoxes = [buildCandidate(900_000_000n, [])];
+
+    const changeAssets: Array<AssetBalance> = [
+      {
+        nativeToken: 1_000_000n,
+        tokens: [],
+      },
+    ];
+
+    const changeBoxes = builder.build({
+      inputBoxes,
+      outputBoxes,
+      height: HEIGHT,
+      fee: FEE,
+      changeAssets,
+    });
+
+    expect(changeBoxes).toHaveLength(1);
+    expect(changeBoxes[0].value().as_i64().to_str()).toBe('1000000');
+    expect(changeBoxes[0].tokens().len()).toBe(0);
+  });
+
+  /**
+   * @target ErgoChangeBoxBuilder.build should throw when burnTokens is used with changeAssets
+   * @dependencies ergo-lib, testData
+   * @scenario
+   * - provide both changeAssets and burnTokens
+   * @expected
+   * - build throws an error
+   */
+  it('should throw when burnTokens is used with changeAssets', () => {
+    const builder = new ErgoChangeBoxBuilder(CHANGE_ADDRESS);
+    const inputBoxes = testData.ergoBoxes.slice(0, 1);
+    const outputBoxes = [buildCandidate(900_000_000n, [])];
+
+    expect(() =>
+      builder.build({
+        inputBoxes,
+        outputBoxes,
+        height: HEIGHT,
+        fee: FEE,
+        changeAssets: [
+          {
+            nativeToken: 1_000_000n,
+            tokens: [],
+          },
+        ],
+        burnTokens: [{ id: TOKEN_ID, value: 1n }],
+      }),
+    ).toThrow(/burnTokens can only be used/);
   });
 
   /**
    * @target ErgoChangeBoxBuilder.build should set provided registers on change boxes
    * @dependencies ergo-lib, testData
    * @scenario
-   * - pass registerValues map when building change boxes
+   * - pass registerValues array when building change boxes
    * - inspect the returned change boxes
    * @expected
    * - each change box contains the provided register values
@@ -395,7 +511,7 @@ describe('ErgoChangeBoxBuilder', () => {
       outputBoxes,
       height: HEIGHT,
       fee: FEE,
-      burnTokens: new Map([[TOKEN_ID, 10n]]),
+      burnTokens: [{ id: TOKEN_ID, value: 10n }],
     });
 
     expect(changeBoxes).toHaveLength(1);
@@ -426,7 +542,7 @@ describe('ErgoChangeBoxBuilder', () => {
         outputBoxes,
         height: HEIGHT,
         fee: FEE,
-        burnTokens: new Map([[TOKEN_ID, 1000n]]),
+        burnTokens: [{ id: TOKEN_ID, value: 1000n }],
       }),
     ).toThrow(/Burn amount/);
   });
@@ -452,7 +568,7 @@ describe('ErgoChangeBoxBuilder', () => {
       outputBoxes,
       height: HEIGHT,
       fee: FEE,
-      burnTokens: new Map([[TOKEN_ID, 150n]]),
+      burnTokens: [{ id: TOKEN_ID, value: 150n }],
     });
 
     expect(changeBoxes).toHaveLength(1);
@@ -495,10 +611,10 @@ describe('ErgoChangeBoxBuilder', () => {
       outputBoxes,
       height: HEIGHT,
       fee: FEE,
-      burnTokens: new Map([
-        [TOKEN_ID, 10n],
-        [otherTokenId, 5n],
-      ]),
+      burnTokens: [
+        { id: TOKEN_ID, value: 10n },
+        { id: otherTokenId, value: 5n },
+      ],
     });
 
     expect(changeBoxes).toHaveLength(1);
