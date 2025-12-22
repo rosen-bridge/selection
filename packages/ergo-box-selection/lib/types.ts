@@ -15,3 +15,18 @@ export interface BuildChangeBoxesParams {
   registerValues?: RegisterValues;
   burnTokens?: Array<TokenInfo>;
 }
+
+export interface BuildChangeBoxesFromBoxesParams {
+  height: number;
+  inputBoxes: Array<ergoLib.ErgoBox>;
+  outputBoxes: Array<ergoLib.ErgoBoxCandidate>;
+  fee?: bigint;
+  registerValues?: RegisterValues;
+  burnTokens?: Array<TokenInfo>;
+}
+
+export interface BuildChangeBoxesFromChangeAssetsParams {
+  height: number;
+  changeAssets: Array<AssetBalance>;
+  registerValues?: RegisterValues;
+}

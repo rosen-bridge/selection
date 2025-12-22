@@ -4,6 +4,8 @@ import { AssetBalance, TokenInfo } from '@rosen-bridge/selection-types';
 
 import {
   BuildChangeBoxesParams,
+  BuildChangeBoxesFromBoxesParams,
+  BuildChangeBoxesFromChangeAssetsParams,
   ChangeAddressInput,
   RegisterValues,
 } from './types';
@@ -20,6 +22,29 @@ export class ErgoChangeBoxBuilder {
     this.changeAddressProvider =
       typeof changeAddress === 'function' ? changeAddress : () => changeAddress;
   }
+
+  /**
+   * Creates a builder for the computed pathway (input/output mode).
+   * @param changeAddress change address (string or generator function)
+   */
+  static fromBoxes = (changeAddress: ChangeAddressInput) => {
+    const builder = new ErgoChangeBoxBuilder(changeAddress);
+    return {
+      build: (params: BuildChangeBoxesFromBoxesParams) => builder.build(params),
+    };
+  };
+
+  /**
+   * Creates a builder for the explicit pathway (changeAssets mode).
+   * @param changeAddress change address (string or generator function)
+   */
+  static fromChangeAssets = (changeAddress: ChangeAddressInput) => {
+    const builder = new ErgoChangeBoxBuilder(changeAddress);
+    return {
+      build: (params: BuildChangeBoxesFromChangeAssetsParams) =>
+        builder.build(params),
+    };
+  };
 
   /**
    * Builds change boxes for the provided transaction context.
