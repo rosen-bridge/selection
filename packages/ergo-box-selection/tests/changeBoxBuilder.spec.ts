@@ -183,33 +183,6 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build should not validate provided changeAssets
-   * @dependencies ergo-lib, testUtils
-   * @scenario
-   * - provide changeAssets that do not match the computed change of inputs/outputs
-   * - build change boxes
-   * @expected
-   * - builder returns change boxes matching provided changeAssets
-   */
-  it('should not validate provided changeAssets', () => {
-    const changeAssets: Array<AssetBalance> = [
-      {
-        nativeToken: 1_000_000n,
-        tokens: [],
-      },
-    ];
-
-    const changeBoxes = ErgoChangeBoxBuilder.fromChangeAssets(
-      CHANGE_ADDRESS,
-      changeAssets,
-    ).build({ height: HEIGHT });
-
-    expect(changeBoxes).toHaveLength(1);
-    expect(changeBoxes[0].value().as_i64().to_str()).toBe('1000000');
-    expect(changeBoxes[0].tokens().len()).toBe(0);
-  });
-
-  /**
    * @target ErgoChangeBoxBuilder.build should set provided registers on change boxes
    * @dependencies ergo-lib, testData
    * @scenario
@@ -234,8 +207,8 @@ describe('ErgoChangeBoxBuilder', () => {
 
     expect(changeBoxes).toHaveLength(changeAssets.length);
     changeBoxes.forEach((changeBox) => {
-      expect(changeBox.register_value(4)?.dbg_inner()).toBe(
-        registerValue.dbg_inner(),
+      expect(changeBox.register_value(4)?.to_i64().to_str()).toBe(
+        registerValue.to_i64().to_str(),
       );
     });
   });

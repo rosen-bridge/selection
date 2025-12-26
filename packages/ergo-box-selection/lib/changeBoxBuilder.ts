@@ -91,6 +91,14 @@ export class ErgoChangeBoxBuilder {
     );
   };
 
+  /**
+   * Computes change assets from input and output boxes.
+   * @param inputBoxes input boxes
+   * @param outputBoxes output boxes
+   * @param fee optional fee
+   * @param burnTokens optional burn tokens
+   * @returns change assets
+   */
   private computeChangeAssetsFromBoxes = (
     inputBoxes: Array<ergoLib.ErgoBox>,
     outputBoxes: Array<ergoLib.ErgoBoxCandidate>,
