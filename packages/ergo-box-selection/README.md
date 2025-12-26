@@ -111,12 +111,10 @@ if (!covering.covered) throw new Error('Insufficient inputs');
 
 const changeBoxes = ErgoChangeBoxBuilder.fromChangeAssets(
   () => nextChangeAddress(), // or a fixed base58 string
-).build({
-  height,
-  changeAssets: covering.additionalAssets.list,
-});
+  covering.additionalAssets.list,
+).build({ height });
 ```
 
 Pass `registerValues` (array of `Constant`, ordered as R4, R5, ... R9) to apply the same register content to every produced change box.
 
-Use `ErgoChangeBoxBuilder.fromBoxes(...).build({ height, inputBoxes, outputBoxes, ... })` when you want the builder to compute change from inputs/outputs. Pass `burnTokens` (an array of `{ id, value }` token entries) only in this mode.
+Use `ErgoChangeBoxBuilder.fromBoxes(changeAddress, inputBoxes, outputBoxes, fee, burnTokens).build({ height })` when you want the builder to compute change from inputs/outputs. Pass `burnTokens` (an array of `{ id, value }` token entries) only in this mode.

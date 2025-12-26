@@ -4,8 +4,6 @@ import { AssetBalance, TokenInfo } from '@rosen-bridge/selection-types';
 
 import {
   BuildChangeBoxesParams,
-  BuildChangeBoxesFromBoxesParams,
-  BuildChangeBoxesFromChangeAssetsParams,
   ChangeAddressInput,
   RegisterValues,
 } from './types';
@@ -25,81 +23,104 @@ export class ErgoChangeBoxBuilder {
 
   /**
    * Creates a builder for the computed pathway (input/output mode).
+   *
    * @param changeAddress change address (string or generator function)
+   * @param inputBoxes selected input boxes
+   * @param outputBoxes planned outputs
+   * @param fee optional fee (defaults to 0)
+   * @param burnTokens optional token burns
    */
-  static fromBoxes = (changeAddress: ChangeAddressInput) => {
+  static fromBoxes = (
+    changeAddress: ChangeAddressInput,
+    inputBoxes: Array<ergoLib.ErgoBox>,
+    outputBoxes: Array<ergoLib.ErgoBoxCandidate>,
+    fee?: bigint,
+    burnTokens?: Array<TokenInfo>,
+  ) => {
     const builder = new ErgoChangeBoxBuilder(changeAddress);
     return {
-      build: (params: BuildChangeBoxesFromBoxesParams) => builder.build(params),
+      build: (params: BuildChangeBoxesParams) => {
+        const changeAssets = builder.computeChangeAssetsFromBoxes(
+          inputBoxes,
+          outputBoxes,
+          fee,
+          burnTokens,
+        );
+        return builder.build(params, changeAssets);
+      },
     };
   };
 
   /**
    * Creates a builder for the explicit pathway (changeAssets mode).
+   *
    * @param changeAddress change address (string or generator function)
+   * @param changeAssets explicit change assets (no validation is performed)
    */
-  static fromChangeAssets = (changeAddress: ChangeAddressInput) => {
+  static fromChangeAssets = (
+    changeAddress: ChangeAddressInput,
+    changeAssets: Array<AssetBalance>,
+  ) => {
     const builder = new ErgoChangeBoxBuilder(changeAddress);
     return {
-      build: (params: BuildChangeBoxesFromChangeAssetsParams) =>
-        builder.build(params),
+      build: (params: BuildChangeBoxesParams) =>
+        builder.build(params, changeAssets),
     };
   };
 
   /**
-   * Builds change boxes for the provided transaction context.
-   * @param params configuration including inputs, outputs, fee, registers and optional change assets
+   * Builds change boxes from provided change assets.
+   * @param params height/registers configuration
+   * @param changeAssets explicit change assets to build change boxes from
    * @returns list of ErgoBox candidates representing the change boxes
    */
-  build = (params: BuildChangeBoxesParams): Array<ergoLib.ErgoBoxCandidate> => {
-    const {
-      inputBoxes,
-      outputBoxes,
-      height,
-      changeAssets,
-      registerValues,
-      burnTokens,
-    } = params;
+  build = (
+    params: BuildChangeBoxesParams,
+    changeAssets: Array<AssetBalance>,
+  ): Array<ergoLib.ErgoBoxCandidate> => {
+    const { height, registerValues } = params;
 
     if (!Number.isInteger(height) || height <= 0) {
       throw new Error('Height must be a positive integer');
     }
 
-    if (changeAssets) {
-      if (burnTokens) {
-        throw new Error(
-          'burnTokens can only be used when changeAssets is not provided',
-        );
-      }
-      return changeAssets.map((assets, index) =>
-        this.buildChangeBox(assets, height, registerValues ?? [], index),
-      );
-    }
+    if (changeAssets.length === 0) return [];
 
-    if (!inputBoxes?.length) {
+    return changeAssets.map((assets, index) =>
+      this.buildChangeBox(assets, height, registerValues ?? [], index),
+    );
+  };
+
+  private computeChangeAssetsFromBoxes = (
+    inputBoxes: Array<ergoLib.ErgoBox>,
+    outputBoxes: Array<ergoLib.ErgoBoxCandidate>,
+    fee?: bigint,
+    burnTokens?: Array<TokenInfo>,
+  ): Array<AssetBalance> => {
+    if (!inputBoxes.length) {
       throw new Error(
         'At least one input box is required to build change boxes',
       );
     }
-    if (!outputBoxes?.length) {
+    if (!outputBoxes.length) {
       throw new Error(
         'At least one output box candidate is required to build change boxes',
       );
     }
 
-    const fee = params.fee ?? 0n;
+    const resolvedFee = fee ?? 0n;
     const { nativeToken: totalInputNative, tokens: inputTokens } =
       this.aggregateAssets(inputBoxes);
     const { nativeToken: totalOutputNative, tokens: outputTokens } =
       this.aggregateAssets(outputBoxes);
 
-    if (totalOutputNative + fee > totalInputNative) {
+    if (totalOutputNative + resolvedFee > totalInputNative) {
       throw new Error(
-        `Total output ERG plus fee (${totalOutputNative + fee}) exceeds total input ERG (${totalInputNative})`,
+        `Total output ERG plus fee (${totalOutputNative + resolvedFee}) exceeds total input ERG (${totalInputNative})`,
       );
     }
 
-    const changeNative = totalInputNative - totalOutputNative - fee;
+    const changeNative = totalInputNative - totalOutputNative - resolvedFee;
     const firstInputBoxId = inputBoxes[0].box_id().to_str();
     let changeTokens = this.calculateChangeTokens(
       inputTokens,
@@ -119,14 +140,7 @@ export class ErgoChangeBoxBuilder {
       );
     }
 
-    const finalChangeAssets = this.buildDefaultChangeAssets(
-      changeNative,
-      changeTokens,
-    );
-
-    return finalChangeAssets.map((assets, index) =>
-      this.buildChangeBox(assets, height, registerValues ?? [], index),
-    );
+    return this.buildDefaultChangeAssets(changeNative, changeTokens);
   };
 
   /**
