@@ -140,7 +140,12 @@ export class ErgoChangeBoxBuilder {
       );
     }
 
-    return this.buildDefaultChangeAssets(changeNative, changeTokens);
+    return [
+      {
+        nativeToken: changeNative,
+        tokens: changeTokens,
+      },
+    ];
   };
 
   /**
@@ -237,40 +242,6 @@ export class ErgoChangeBoxBuilder {
     });
 
     return this.fromTokenMap(updated);
-  };
-
-  /**
-   * Builds the default single change asset group when caller does not pass one.
-   * @param changeNative remaining native token amount
-   * @param changeTokens remaining tokens
-   * @returns list containing a single asset balance (or empty when nothing to return)
-   */
-  private buildDefaultChangeAssets = (
-    changeNative: bigint,
-    changeTokens: Array<TokenInfo>,
-  ): Array<AssetBalance> => {
-    if (changeNative === 0n && changeTokens.length === 0) {
-      return [];
-    }
-
-    // minChangeBoxValue will be validated when building the actual box
-
-    if (changeNative <= 0n && changeTokens.length > 0) {
-      throw new Error(
-        'Change tokens detected but no ERG available to hold them in a change box',
-      );
-    }
-
-    if (changeNative <= 0n) {
-      return [];
-    }
-
-    return [
-      {
-        nativeToken: changeNative,
-        tokens: changeTokens,
-      },
-    ];
   };
 
   /**
