@@ -354,6 +354,11 @@ export class ErgoChangeBoxBuilder {
     }
   };
 
+  /**
+   * Converts an array of TokenInfo objects to a map of token ids to values.
+   * @param tokens array of TokenInfo objects
+   * @returns map of token ids to values
+   */
   private toTokenMap = (tokens: Array<TokenInfo>): Map<string, bigint> => {
     const map = new Map<string, bigint>();
     tokens.forEach((token) => {
@@ -363,6 +368,11 @@ export class ErgoChangeBoxBuilder {
     return map;
   };
 
+  /**
+   * Converts a map of token ids to values to an array of TokenInfo objects.
+   * @param map map of token ids to values
+   * @returns array of TokenInfo objects
+   */
   private fromTokenMap = (map: Map<string, bigint>): Array<TokenInfo> =>
     Array.from(map.entries()).map(([id, value]) => ({ id, value }));
 }
