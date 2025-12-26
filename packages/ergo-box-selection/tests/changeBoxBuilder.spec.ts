@@ -2,7 +2,6 @@ import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import { describe, expect, it } from 'vitest';
 
 import { AssetBalance, ErgoChangeBoxBuilder } from '../lib';
-import { buildCandidate } from './changeBoxBuilder.mocks';
 import {
   CHANGE_ADDRESS,
   FEE,
@@ -12,6 +11,7 @@ import {
   UNKNOWN_TOKEN_ID,
 } from './testData';
 import * as testData from './testData';
+import { buildCandidate } from './utils/testUtils';
 
 describe('ErgoChangeBoxBuilder', () => {
   /**
@@ -120,7 +120,7 @@ describe('ErgoChangeBoxBuilder', () => {
 
   /**
    * @target ErgoChangeBoxBuilder.build should preserve token order in provided changeAssets
-   * @dependencies ergo-lib, changeBoxBuilder.mocks
+   * @dependencies ergo-lib, testUtils
    * @scenario
    * - create input box with two token ids
    * - create output box consuming some of each token and ERG
@@ -184,7 +184,7 @@ describe('ErgoChangeBoxBuilder', () => {
 
   /**
    * @target ErgoChangeBoxBuilder.build should not validate provided changeAssets
-   * @dependencies ergo-lib, changeBoxBuilder.mocks
+   * @dependencies ergo-lib, testUtils
    * @scenario
    * - provide changeAssets that do not match the computed change of inputs/outputs
    * - build change boxes

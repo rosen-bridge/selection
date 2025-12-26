@@ -1,6 +1,6 @@
 import * as ergoLib from 'ergo-lib-wasm-nodejs';
 
-import { CHANGE_ADDRESS, HEIGHT } from './testData';
+import { CHANGE_ADDRESS, HEIGHT } from '../testData';
 
 /**
  * Builds an ErgoBoxCandidate with the given value, tokens, address, and height.
