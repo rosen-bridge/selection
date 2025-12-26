@@ -159,7 +159,7 @@ describe('ErgoChangeBoxBuilder', () => {
   });
 
   /**
-   * @target ErgoChangeBoxBuilder.build should require height
+   * @target ErgoChangeBoxBuilder.build should throw when height is not provided
    * @dependencies ergo-lib, testData
    * @scenario
    * - call build without height

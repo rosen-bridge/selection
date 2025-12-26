@@ -30,7 +30,7 @@ describe('ErgoBoxSelection', () => {
     const emptyMap = new Map<string, ErgoBox>();
 
     /**
-     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes
+     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes as covered when boxes cover required assets
      * as covered when boxes cover required assets
      * @dependencies
      * @scenario
@@ -91,7 +91,7 @@ describe('ErgoBoxSelection', () => {
     });
 
     /**
-     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes
+     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes as covered when boxes cover required assets and additional native token for the change box
      * as covered when boxes cover required assets and additional native token for the change box
      * @dependencies
      * @scenario
@@ -147,7 +147,7 @@ describe('ErgoBoxSelection', () => {
     });
 
     /**
-     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes
+     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes as covered when boxes cover required assets and additional native token for the transaction fee
      * as covered when boxes cover required assets and additional native token for the transaction fee
      * @dependencies
      * @scenario
