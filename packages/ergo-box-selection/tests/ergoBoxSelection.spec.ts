@@ -30,7 +30,7 @@ describe('ErgoBoxSelection', () => {
     const emptyMap = new Map<string, ErgoBox>();
 
     /**
-     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes as covered when boxes cover required assets
+     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes
      * as covered when boxes cover required assets
      * @dependencies
      * @scenario
@@ -45,7 +45,7 @@ describe('ErgoBoxSelection', () => {
      *   - balance in list
      *   - estimated fee
      */
-    it('should return enough boxes as covered when boxes cover required assets as covered when boxes cover required assets', async () => {
+    it('should return enough boxes as covered when boxes cover required assets', async () => {
       // Mock an iterator to return 2 boxes
       const iterator = testData.ergoBoxes.slice(0, 2).values();
 
@@ -91,7 +91,7 @@ describe('ErgoBoxSelection', () => {
     });
 
     /**
-     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes as covered when boxes cover required assets and additional native token for the change box
+     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes
      * as covered when boxes cover required assets and additional native token for the change box
      * @dependencies
      * @scenario
@@ -106,7 +106,7 @@ describe('ErgoBoxSelection', () => {
      *   - balance in list
      *   - estimated fee
      */
-    it('should return enough boxes as covered when boxes cover required assets and additional native token for the change box as covered when boxes cover required assets and additional native token for the change box', async () => {
+    it('should return enough boxes as covered when boxes cover required assets and additional native token for the change box', async () => {
       // Mock an iterator to return 3 boxes
       const iterator = testData.ergoBoxes.values();
 
@@ -147,7 +147,7 @@ describe('ErgoBoxSelection', () => {
     });
 
     /**
-     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes as covered when boxes cover required assets and additional native token for the transaction fee
+     * @target ErgoBoxSelection.getCoveringBoxes should return enough boxes
      * as covered when boxes cover required assets and additional native token for the transaction fee
      * @dependencies
      * @scenario
@@ -162,7 +162,7 @@ describe('ErgoBoxSelection', () => {
      *   - balance in list
      *   - estimated fee
      */
-    it('should return enough boxes as covered when boxes cover required assets and additional native token for the transaction fee as covered when boxes cover required assets and additional native token for the transaction fee', async () => {
+    it('should return enough boxes as covered when boxes cover required assets and additional native token for the transaction fee', async () => {
       // Mock an iterator to return 2 boxes
       const iterator = testData.ergoBoxes.slice(0, 2).values();
 
