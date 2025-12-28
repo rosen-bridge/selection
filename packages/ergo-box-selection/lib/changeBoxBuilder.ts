@@ -11,7 +11,7 @@ import {
 export class ErgoChangeBoxBuilder {
   private readonly changeAddressProvider: () => string;
 
-  constructor(changeAddress: ChangeAddressInput) {
+  protected constructor(changeAddress: ChangeAddressInput) {
     if (!changeAddress) {
       throw new Error(
         'Change address (string or generator function) is required',
@@ -33,7 +33,7 @@ export class ErgoChangeBoxBuilder {
   static fromBoxes = (
     changeAddress: ChangeAddressInput,
     inputBoxes: Array<ergoLib.ErgoBox>,
-    outputBoxes: Array<ergoLib.ErgoBoxCandidate>,
+    outputBoxes: Array<ergoLib.ErgoBoxCandidate | ergoLib.ErgoBox>,
     fee?: bigint,
     burnTokens?: Array<TokenInfo>,
   ) => {
@@ -108,11 +108,6 @@ export class ErgoChangeBoxBuilder {
     if (!inputBoxes.length) {
       throw new Error(
         'At least one input box is required to build change boxes',
-      );
-    }
-    if (!outputBoxes.length) {
-      throw new Error(
-        'At least one output box candidate is required to build change boxes',
       );
     }
 
@@ -256,7 +251,7 @@ export class ErgoChangeBoxBuilder {
    * Builds an Ergo change box candidate for a specific asset group.
    * @param assets asset balance assigned to the change box
    * @param height creation height
-   * @param registerEntries shared register values
+   * @param registerValues shared register values
    * @param index 0-based index used for error messages
    * @returns constructed ErgoBoxCandidate
    */
