@@ -1,5 +1,11 @@
 # @rosen-bridge/bitcoin-utxo-selection
 
+## 2.0.2
+
+### Patch Changes
+
+- Remove dependency @rosen-bridge/abstract-logger@3.1.0
+
 ## 2.0.1
 
 ### Patch Changes

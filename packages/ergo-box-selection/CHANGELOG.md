@@ -1,5 +1,15 @@
 # @rosen-bridge/ergo-box-selection
 
+## 2.1.0
+
+### Minor Changes
+
+- Add change box builder that supports multiple AssetBalance and setting register values
+
+### Patch Changes
+
+- Remove dependency @rosen-bridge/abstract-logger@3.1.0
+
 ## 2.0.1
 
 ### Patch Changes
