@@ -1,6 +1,6 @@
 {
   "name": "@rosen-bridge/bitcoin-utxo-selection",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "A Typescript package to select enough Bitcoin utxos for required amount of BTC",
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@rosen-bridge/abstract-box-selection": "^1.0.1",
+    "@rosen-bridge/abstract-box-selection": "^1.0.2",
     "@rosen-bridge/selection-types": "^1.0.1"
   },
   "devDependencies": {

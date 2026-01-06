@@ -1,5 +1,12 @@
 # @rosen-bridge/cardano-utxo-selection
 
+## 3.0.3
+
+### Patch Changes
+
+- Update dependencies
+  - @rosen-bridge/abstract-box-selection@1.0.2
+
 ## 3.0.2
 
 ### Patch Changes
