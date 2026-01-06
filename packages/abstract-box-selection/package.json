@@ -28,7 +28,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@rosen-bridge/abstract-logger": "^3.0.1",
+    "@rosen-bridge/abstract-logger": "^4.0.0",
     "@rosen-bridge/selection-types": "^1.0.1"
   },
   "devDependencies": {
