@@ -1,5 +1,12 @@
 # @rosen-bridge/bitcoin-runes-utxo-selection
 
+## 2.0.3
+
+### Patch Changes
+
+- Update dependencies
+  - @rosen-bridge/abstract-box-selection@1.0.2
+
 ## 2.0.2
 
 ### Patch Changes
