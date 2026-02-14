@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
+    "types": ["node", "vitest/globals"],
   },
-  "include": ["tests", "lib", "vitest.config.ts"],
+  "include": ["tests", "lib"],
   "references": [
     { "path": "../abstract-box-selection" },
     { "path": "../selection-types" },
