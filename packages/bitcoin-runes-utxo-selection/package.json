@@ -1,6 +1,6 @@
 {
   "name": "@rosen-bridge/bitcoin-runes-utxo-selection",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "A Typescript package to select enough Bitcoin utxos for required amount of BTC and Runes",
   "repository": {
     "type": "git",
