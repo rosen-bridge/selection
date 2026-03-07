@@ -3,6 +3,7 @@ export interface BitcoinRunesUtxo {
   index: number;
   value: bigint;
   runes: Array<BitcoinRunes>;
+  address?: string;
 }
 
 export interface BitcoinRunes {
