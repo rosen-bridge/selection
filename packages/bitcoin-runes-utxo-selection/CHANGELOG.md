@@ -1,5 +1,11 @@
 # @rosen-bridge/bitcoin-runes-utxo-selection
 
+## 2.1.0
+
+### Minor Changes
+
+- Added an optional address field to the BitcoinRunesUtxo type.
+
 ## 2.0.3
 
 ### Patch Changes
